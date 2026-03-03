@@ -1,0 +1,40 @@
+<h2>Signup</h2>
+
+<form method="post">
+    {% csrf_token %}
+
+    <label>Role:</label>
+    <select name="role">
+        <option value="STUDENT">Student</option>
+        <option value="TEACHER">Teacher</option>
+    </select>
+    <br><br>
+
+    <input type="text" name="first_name" placeholder="First Name" required>
+    <br><br>
+
+    <input type="text" name="last_name" placeholder="Last Name" required>
+    <br><br>
+
+    <label>Admission No / Teacher Code:</label>
+    <input type="text" name="username" required>
+    <br><br>
+
+    <label>Mobile:</label>
+    <input type="text" name="mobile" required>
+    <br><br>
+
+    <label>Email:</label>
+    <input type="email" name="email" required>
+    <br><br>
+
+    <label>Password:</label>
+    <input type="password" name="password" required>
+    <br><br>
+
+    <button type="submit">Register</button>
+</form>
+
+{% for message in messages %}
+<p>{{ message }}</p>
+{% endfor %}

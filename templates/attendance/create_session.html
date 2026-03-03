@@ -1,0 +1,19 @@
+<h2>Create Attendance Session</h2>
+
+<form method="POST">
+    {% csrf_token %}
+
+    <label>Select Subject</label>
+    <select name="assignment">
+        {% for a in assignments %}
+            <option value="{{ a.id }}">
+                {{ a.section }} - {{ a.subject }}
+            </option>
+        {% endfor %}
+    </select>
+
+    <label>Date</label>
+    <input type="date" name="date">
+
+    <button type="submit">Create Session</button>
+</form>

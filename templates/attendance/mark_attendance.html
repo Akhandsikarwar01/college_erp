@@ -1,0 +1,19 @@
+<h2>Mark Attendance - {{ session.date }}</h2>
+
+<form method="POST">
+    {% csrf_token %}
+
+    {% for record in records %}
+        <div>
+            <label>
+                <input type="checkbox" 
+                       name="student_{{ record.id }}"
+                       {% if record.is_present %}checked{% endif %}>
+                {{ record.student.user.first_name }} 
+                {{ record.student.user.last_name }}
+            </label>
+        </div>
+    {% endfor %}
+
+    <button type="submit">Save Attendance</button>
+</form>

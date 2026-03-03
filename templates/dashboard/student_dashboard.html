@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2 class="mb-4">Student Dashboard</h2>
+
+{% if subjects %}
+
+    {% for subject, data in subjects.items %}
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+
+            <h5 class="card-title">{{ subject }}</h5>
+
+            <p>
+                Total Classes: <strong>{{ data.total }}</strong><br>
+                Present: <strong>{{ data.present }}</strong>
+            </p>
+
+            <!-- Progress Bar -->
+            <div class="progress mb-2" style="height: 20px;">
+                <div class="progress-bar 
+                    {% if data.percentage < 75 %}
+                        bg-danger
+                    {% else %}
+                        bg-success
+                    {% endif %}"
+                    role="progressbar"
+                    style="width: {{ data.percentage }}%;">
+                    
+                    {{ data.percentage }}%
+                </div>
+            </div>
+
+            {% if data.is_low %}
+                <div class="text-danger fw-bold">
+                    ⚠ Attendance below 75%
+                </div>
+            {% endif %}
+
+        </div>
+    </div>
+    {% endfor %}
+
+{% else %}
+    <div class="alert alert-info">
+        No attendance data available.
+    </div>
+{% endif %}
+
+{% endblock %}

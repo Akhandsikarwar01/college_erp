@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold">Teacher Dashboard</h2>
+
+    <a href="{% url 'create_session' %}" class="btn btn-primary">
+        + Create Attendance Session
+    </a>
+</div>
+
+<!-- Summary Card -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Total Sessions</h5>
+        <h3 class="text-primary">{{ total_sessions }}</h3>
+    </div>
+</div>
+
+<!-- Sessions List -->
+<h4 class="mb-3">Your Sessions</h4>
+
+{% if sessions %}
+
+    {% for item in session_data %}
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+
+            <div class="d-flex justify-content-between">
+                <div>
+                    <strong>{{ item.session.teacher_assignment.course.name }}</strong><br>
+                    <small>
+                        {{ item.session.teacher_assignment.section }} |
+                        {{ item.session.date }}
+                    </small>
+                </div>
+
+                <div>
+                    <a href="{% url 'mark_attendance' item.session.id %}" 
+                    class="btn btn-sm btn-success">
+                        Mark
+                    </a>
+                </div>
+            </div>
+
+            <hr>
+
+            <p>
+                Total: <strong>{{ item.total }}</strong> |
+                Present: <strong>{{ item.present }}</strong> |
+                Absent: <strong>{{ item.absent }}</strong>
+            </p>
+
+            <div class="progress" style="height: 20px;">
+                <div class="progress-bar bg-info"
+                    style="width: {{ item.percentage }}%;">
+                    {{ item.percentage }}%
+                </div>
+            </div>
+
+        </div>
+    </div>
+    {% empty %}
+    <p>No sessions yet.</p>
+    {% endfor %}
+
+{% else %}
+    <div class="alert alert-info">
+        No attendance sessions created yet.
+    </div>
+{% endif %}
+
+{% endblock %}
