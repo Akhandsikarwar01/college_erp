@@ -4,6 +4,7 @@ DEBUG = False
 
 ALLOWED_HOSTS = [
     "college-erp-vlo5.onrender.com",
+    "erp.akhandsikarwar.in",
     "akhandsikarwar.in",
     "www.akhandsikarwar.in",
 ]
