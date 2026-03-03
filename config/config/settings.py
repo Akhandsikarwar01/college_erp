@@ -25,7 +25,12 @@ SECRET_KEY = 'django-insecure-1p5ilzx66^#+a97_o6wnx2*7uj9&zwj%^7xsg!i8hf%arzjttz
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ["*.onrender.com"]
+ALLOWED_HOSTS = [
+    "college-erp-vlo5.onrender.com",
+    "akhandsikarwar.in",
+    "www.akhandsikarwar.in",
+]
+
 
 
 # Application definition
@@ -117,6 +122,9 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
+
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
