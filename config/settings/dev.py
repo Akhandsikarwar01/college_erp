@@ -1,7 +1,11 @@
 from .base import *
 
-DEBUG = True
-ALLOWED_HOSTS = []
+DEBUG = False
+ALLOWED_HOSTS = [
+    "college-erp-vlo5.onrender.com",
+    "akhandsikarwar.in",
+    "www.akhandsikarwar.in",
+]
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "smtp.gmail.com"
