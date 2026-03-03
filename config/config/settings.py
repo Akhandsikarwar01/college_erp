@@ -7,7 +7,13 @@ SECRET_KEY = 'django-insecure-1p5ilzx66^#+a97_o6wnx2*7uj9&zwj%^7xsg!i8hf%arzjttz
 
 DEBUG = False
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = [
+    ".onrender.com",
+    "erp.akhandsikarwar.in",
+    "college-erp-vlo5.onrender.com",
+    "akhandsikarwar.in",
+    "www.akhandsikarwar.in",
+]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
