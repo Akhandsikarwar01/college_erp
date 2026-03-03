@@ -5,8 +5,6 @@ DEBUG = False
 ALLOWED_HOSTS = [
     "college-erp-vlo5.onrender.com",
     "erp.akhandsikarwar.in",
-    "akhandsikarwar.in",
-    "www.akhandsikarwar.in",
 ]
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
