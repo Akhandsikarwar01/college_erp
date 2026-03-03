@@ -1,12 +1,20 @@
 from .base import *
 
 DEBUG = False
+<<<<<<< HEAD
 ALLOWED_HOSTS = [
     "college-erp-vlo5.onrender.com",
     "akhandsikarwar.in",
     "www.akhandsikarwar.in",
 ]
+=======
+>>>>>>> 22cc4cb (Production settings fix)
 
+ALLOWED_HOSTS = [
+    "college-erp-vlo5.onrender.com",
+    "akhandsikarwar.in",
+    "www.akhandsikarwar.in",
+]
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "smtp.gmail.com"
 EMAIL_PORT = 587
