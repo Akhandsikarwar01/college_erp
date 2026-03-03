@@ -24,20 +24,18 @@ SECRET_KEY = 'django-insecure-1p5ilzx66^#+a97_o6wnx2*7uj9&zwj%^7xsg!i8hf%arzjttz
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
-
-<<<<<<< HEAD
+HEAD
 ALLOWED_HOSTS = [
-=======
 ALLOWED_HOSTS = ["*.onrender.com"
->>>>>>> 22cc4cb (Production settings fix)
+ 22cc4cb (Production settings fix)
     "college-erp-vlo5.onrender.com",
     "akhandsikarwar.in",
     "www.akhandsikarwar.in",
 ]
-<<<<<<< HEAD
+HEAD
 
-=======
->>>>>>> 22cc4cb (Production settings fix)
+
+22cc4cb (Production settings fix)
 
 
 # Application definition

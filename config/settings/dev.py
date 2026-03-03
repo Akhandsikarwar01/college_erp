@@ -1,14 +1,13 @@
 from .base import *
 
 DEBUG = False
-<<<<<<< HEAD
+HEAD
 ALLOWED_HOSTS = [
     "college-erp-vlo5.onrender.com",
     "akhandsikarwar.in",
     "www.akhandsikarwar.in",
 ]
-=======
->>>>>>> 22cc4cb (Production settings fix)
+22cc4cb (Production settings fix)
 
 ALLOWED_HOSTS = [
     "college-erp-vlo5.onrender.com",
