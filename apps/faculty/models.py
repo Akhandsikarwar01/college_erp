@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.exceptions import ValidationError
 from apps.core.models import TimeStampedModel
 from apps.accounts.models import TeacherProfile
 from apps.academics.models import Subject, Section
@@ -25,6 +26,22 @@ class TeacherAssignment(TimeStampedModel):
 
     class Meta:
         unique_together = ("teacher", "subject", "section")
+
+    def clean(self):
+        """Validate that subject's course matches section's class's course"""
+        if self.subject and self.section:
+            subject_course = self.subject.semester.course
+            section_course = self.section.class_obj.course
+            if subject_course != section_course:
+                raise ValidationError(
+                    f"Subject '{self.subject.name}' is from course {subject_course.name}, "
+                    f"but section is in course {section_course.name}. "
+                    f"Subject and section must be from the same course."
+                )
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.teacher.user.username} - {self.subject.name} ({self.section.name})"
