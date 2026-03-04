@@ -22,8 +22,8 @@ This is a comprehensive College Enterprise Resource Planning (ERP) system built 
 # Navigate to project directory
 cd "/home/akhand/PLAYGROUND/CODE PLAYGROUND/college_erp"
 
-# Make sure virtual environment is activated (if using one)
-# source venv/bin/activate  # or your venv path
+# Activate the project virtual environment
+source /home/akhand/PLAYGROUND/.venv/bin/activate
 
 # Install dependencies (if needed)
 pip install -r requirements.txt
@@ -40,6 +40,9 @@ python manage.py setup_demo_data
 ```bash
 # From the college_erp directory
 python manage.py runserver
+
+# Alternative explicit interpreter
+/home/akhand/PLAYGROUND/.venv/bin/python manage.py runserver
 ```
 
 Then open http://127.0.0.1:8000 in your browser.
@@ -204,7 +207,7 @@ You can also add data through:
 
 ## 🎨 Technology Stack
 
-- **Backend**: Django 4.2.28
+- **Backend**: Django 5.2.12 + Django REST Framework 3.16.1
 - **Database**: SQLite (development)
 - **Frontend**: HTML5, CSS3 (Custom Design System)
 - **JavaScript**: Vanilla JS for interactive features
@@ -307,6 +310,14 @@ kill -9 <PID>
 # Restart server
 python manage.py runserver
 ```
+
+If you see `ModuleNotFoundError: No module named 'rest_framework'`, run:
+
+```bash
+/home/akhand/PLAYGROUND/.venv/bin/python manage.py check
+```
+
+If that works, your shell is using system Python; use the venv command above or reactivate venv.
 
 ### Database Issues
 ```bash

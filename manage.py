@@ -7,6 +7,9 @@ from pathlib import Path
 
 def _prefer_project_venv_python() -> None:
     """Re-exec with project venv Python when script is run with system Python."""
+    if os.environ.get("DISABLE_VENV_AUTO_SWITCH", "0") == "1":
+        return
+
     project_root = Path(__file__).resolve().parent
     candidate_paths = [
         project_root / ".venv" / "bin" / "python",
