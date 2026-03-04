@@ -1,51 +1,107 @@
 {% extends "base.html" %}
+{% block title %}Import Students – College ERP{% endblock %}
+{% block topbar_title %}Import Students{% endblock %}
 
 {% block content %}
 
-<h2 class="mb-4">Import Students</h2>
+<div style="max-width:680px;margin:0 auto">
 
-<form method="post" enctype="multipart/form-data" class="card p-4 shadow-sm">
-    {% csrf_token %}
+  <div class="page-header fade-in-up">
+    <div>
+      <div class="page-header-title">Import Students</div>
+      <div class="page-header-subtitle">Bulk-create student accounts from a CSV file</div>
+    </div>
+    <a href="{% url 'dashboard' %}" class="btn btn-secondary">← Dashboard</a>
+  </div>
 
-    <div class="mb-3">
-        <label>Department</label>
-        <select id="department" class="form-select">
-            <option value="">Select Department</option>
+  <!-- Instructions -->
+  <div class="card fade-in-up mb-3">
+    <div class="card-header">
+      <div class="card-title">CSV Format Requirements</div>
+    </div>
+    <div class="card-body">
+      <p class="text-sm text-muted mb-2">Your CSV must contain these columns (order doesn't matter):</p>
+      <div style="background:var(--gray-900);color:#a5f3fc;padding:1rem;border-radius:var(--radius-sm);
+                  font-family:monospace;font-size:.85rem;margin-bottom:1rem">
+        username,password,roll_number<br>
+        cs2024001,SecurePass1,CS/2024/001<br>
+        cs2024002,SecurePass2,CS/2024/002
+      </div>
+      <ul style="color:var(--gray-600);font-size:.85rem;padding-left:1.25rem;line-height:1.8">
+        <li>Usernames will be converted to lowercase</li>
+        <li>Existing usernames will be skipped (not overwritten)</li>
+        <li>All imported students will be auto-verified and approved</li>
+        <li>Rows with missing fields will be skipped</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Upload Form -->
+  <div class="card fade-in-up">
+    <div class="card-header">
+      <div class="card-title">Upload CSV</div>
+    </div>
+    <div class="card-body">
+      <form method="post" enctype="multipart/form-data" action="{% url 'import_students' %}">
+        {% csrf_token %}
+
+        <!-- Department → Program → Course → Class → Section cascade -->
+        <div class="form-group">
+          <label class="form-label" for="id_department">Department</label>
+          <select class="form-control form-select" id="id_department" required>
+            <option value="">— Select Department —</option>
             {% for dept in departments %}
-                <option value="{{ dept.id }}">{{ dept.name }}</option>
+            <option value="{{ dept.id }}">{{ dept.name }}</option>
             {% endfor %}
-        </select>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="id_program">Program</label>
+          <select class="form-control form-select" id="id_program" disabled>
+            <option value="">— Select Program —</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="id_course">Course</label>
+          <select class="form-control form-select" id="id_course" disabled>
+            <option value="">— Select Course —</option>
+          </select>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
+          <div class="form-group">
+            <label class="form-label" for="id_class">Class / Year</label>
+            <select class="form-control form-select" id="id_class" disabled>
+              <option value="">— Select Class —</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="id_section">Section</label>
+            <select class="form-control form-select" id="id_section" name="section" required disabled>
+              <option value="">— Select Section —</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="csv_file">CSV File</label>
+          <input class="form-control" type="file" id="csv_file" name="csv_file"
+                 accept=".csv" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg btn-full">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/>
+            <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+          </svg>
+          Import Students
+        </button>
+      </form>
     </div>
+  </div>
 
-    <div class="mb-3">
-        <label>Program</label>
-        <select id="program" class="form-select"></select>
-    </div>
-
-    <div class="mb-3">
-        <label>Course</label>
-        <select id="course" class="form-select"></select>
-    </div>
-
-    <div class="mb-3">
-        <label>Class</label>
-        <select id="class" class="form-select"></select>
-    </div>
-
-    <div class="mb-3">
-        <label>Section</label>
-        <select name="section" id="section" class="form-select" required></select>
-    </div>
-
-    <div class="mb-3">
-        <label>Upload CSV File</label>
-        <input type="file" name="csv_file" class="form-control" required>
-    </div>
-
-    <button type="submit" class="btn btn-primary w-100">
-        Import Students
-    </button>
-
-</form>
-
+</div>
 {% endblock %}

@@ -1,73 +1,100 @@
 {% extends "base.html" %}
+{% block title %}Teacher Dashboard{% endblock %}
+{% block topbar_title %}Teacher Dashboard{% endblock %}
+
 {% block content %}
-
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="fw-bold">Teacher Dashboard</h2>
-
-    <a href="{% url 'create_session' %}" class="btn btn-primary">
-        + Create Attendance Session
-    </a>
+<div class="page-header fade-in-up">
+  <div>
+    <div class="page-header-title">Welcome, {{ request.user.first_name }} 👋</div>
+    <div class="page-header-subtitle">Manage your QR-based attendance sessions</div>
+  </div>
+  <a href="{% url 'create_session' %}" class="btn btn-primary">+ New Session</a>
 </div>
 
-<!-- Summary Card -->
-<div class="card shadow-sm mb-4">
-    <div class="card-body">
-        <h5 class="card-title">Total Sessions</h5>
-        <h3 class="text-primary">{{ total_sessions }}</h3>
-    </div>
+<div class="stats-grid fade-in-up">
+  <div class="stat-card">
+    <div class="stat-card-icon indigo">📅</div>
+    <div class="stat-card-value">{{ total_sessions }}</div>
+    <div class="stat-card-label">Total Sessions</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-icon green">👥</div>
+    <div class="stat-card-value">{{ total_students }}</div>
+    <div class="stat-card-label">Students Tracked</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-icon amber">🟢</div>
+    <div class="stat-card-value">{{ active_sessions.count }}</div>
+    <div class="stat-card-label">Active Now</div>
+  </div>
 </div>
 
-<!-- Sessions List -->
-<h4 class="mb-3">Your Sessions</h4>
-
-{% if sessions %}
-
-    {% for item in session_data %}
-    <div class="card shadow-sm mb-3">
-        <div class="card-body">
-
-            <div class="d-flex justify-content-between">
-                <div>
-                    <strong>{{ item.session.teacher_assignment.course.name }}</strong><br>
-                    <small>
-                        {{ item.session.teacher_assignment.section }} |
-                        {{ item.session.date }}
-                    </small>
-                </div>
-
-                <div>
-                    <a href="{% url 'mark_attendance' item.session.id %}" 
-                    class="btn btn-sm btn-success">
-                        Mark
-                    </a>
-                </div>
-            </div>
-
-            <hr>
-
-            <p>
-                Total: <strong>{{ item.total }}</strong> |
-                Present: <strong>{{ item.present }}</strong> |
-                Absent: <strong>{{ item.absent }}</strong>
-            </p>
-
-            <div class="progress" style="height: 20px;">
-                <div class="progress-bar bg-info"
-                    style="width: {{ item.percentage }}%;">
-                    {{ item.percentage }}%
-                </div>
-            </div>
-
+{% if active_sessions %}
+<div class="card fade-in-up" style="border-color:var(--success);background:var(--success-bg);margin-bottom:1.5rem">
+  <div class="card-header" style="background:transparent;border-color:rgba(16,185,129,.2)">
+    <div class="card-title" style="color:var(--success)">🟢 Live Sessions</div>
+  </div>
+  <div class="card-body" style="padding:1rem">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:.75rem">
+      {% for s in active_sessions %}
+      <div style="background:#fff;border:1px solid rgba(16,185,129,.25);border-radius:var(--radius);padding:1rem">
+        <div class="fw-semibold">{{ s.teacher_assignment.subject.name }}</div>
+        <div class="text-sm text-muted">Section {{ s.teacher_assignment.section.name }}</div>
+        <div class="flex gap-2" style="margin-top:.75rem">
+          <a href="{% url 'qr_display' s.id %}" class="btn btn-sm btn-success">📱 Open QR</a>
+          <a href="{% url 'session_detail' s.id %}" class="btn btn-sm btn-secondary">View</a>
         </div>
+      </div>
+      {% endfor %}
     </div>
-    {% empty %}
-    <p>No sessions yet.</p>
-    {% endfor %}
-
-{% else %}
-    <div class="alert alert-info">
-        No attendance sessions created yet.
-    </div>
+  </div>
+</div>
 {% endif %}
 
+<div class="card fade-in-up">
+  <div class="card-header">
+    <div class="card-title">Recent Sessions</div>
+    <a href="{% url 'session_list' %}" class="btn btn-sm btn-outline">View All</a>
+  </div>
+  {% if session_data %}
+  <div class="table-wrapper" style="border:none;border-radius:0">
+    <table class="erp-table">
+      <thead><tr><th>Subject</th><th>Section</th><th>Date</th><th>Present</th><th>Rate</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody>
+        {% for item in session_data|slice:":8" %}
+        <tr>
+          <td class="fw-semibold">{{ item.session.teacher_assignment.subject.name }}</td>
+          <td class="text-muted text-sm">{{ item.session.teacher_assignment.section.name }}</td>
+          <td>{{ item.session.date|date:"d M Y" }}</td>
+          <td><span style="color:var(--success);font-weight:600">{{ item.present }}</span><span class="text-muted text-sm"> / {{ item.total }}</span></td>
+          <td>
+            <div style="display:flex;align-items:center;gap:.5rem">
+              <div style="width:50px;height:6px;background:var(--gray-100);border-radius:99px;overflow:hidden">
+                <div style="width:{{ item.percentage }}%;height:100%;background:{% if item.percentage >= 75 %}var(--success){% else %}var(--danger){% endif %};border-radius:99px"></div>
+              </div>
+              <span class="text-sm fw-semibold">{{ item.percentage }}%</span>
+            </div>
+          </td>
+          <td>{% if item.session.is_active %}<span class="status-badge open">Active</span>{% else %}<span class="status-badge locked">Closed</span>{% endif %}</td>
+          <td>
+            <div class="flex gap-2">
+              {% if item.session.is_active %}<a href="{% url 'qr_display' item.session.id %}" class="btn btn-sm btn-primary">QR</a>{% endif %}
+              <a href="{% url 'session_detail' item.session.id %}" class="btn btn-sm btn-secondary">View</a>
+              <a href="{% url 'export_attendance_csv' item.session.id %}" class="btn btn-sm btn-outline">CSV</a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state-icon">📋</div>
+    <div class="empty-state-title">No sessions yet</div>
+    <div class="text-sm text-muted mb-3">Create your first QR attendance session.</div>
+    <a href="{% url 'create_session' %}" class="btn btn-primary">Create Session</a>
+  </div>
+  {% endif %}
+</div>
 {% endblock %}

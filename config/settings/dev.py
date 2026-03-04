@@ -1,16 +1,27 @@
-from .base import *
+"""
+Development settings — extends base.py
+Use: export DJANGO_SETTINGS_MODULE=config.settings.dev
+"""
 
-DEBUG = False
+from .base import *  # noqa
 
+DEBUG = True
+SECRET_KEY = "dev-insecure-key-do-not-use-in-prod"
 ALLOWED_HOSTS = [
-    "college-erp-vlo5.onrender.com",
     "erp.akhandsikarwar.in",
+    "college-erp-vlo5.onrender.com",
 ]
 
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = "smtp.gmail.com"
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = "erpmanager.akhand@gmail.com"
-EMAIL_HOST_PASSWORD = "wkfc pfkf fygb wldu"
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+# Print emails to console instead of sending
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+# No manifest in dev (skip collectstatic)
+STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
+
+# Friendlier error pages
+INSTALLED_APPS += []  # noqa: F405 — already in base, safe to repeat
+
+# Django Debug Toolbar — uncomment if installed:
+# INSTALLED_APPS += ["debug_toolbar"]
+# MIDDLEWARE.insert(1, "debug_toolbar.middleware.DebugToolbarMiddleware")
+# INTERNAL_IPS = ["127.0.0.1"]

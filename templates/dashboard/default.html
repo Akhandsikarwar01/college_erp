@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Dashboard – College ERP{% endblock %}
+{% block topbar_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="empty-state fade-in-up" style="padding:5rem 2rem">
+  <div class="empty-state-icon">🏛</div>
+  <div class="empty-state-title">Welcome to College ERP</div>
+  <div class="text-sm text-muted">
+    {% if message %}
+      {{ message }}
+    {% else %}
+      Your dashboard is not configured. Please contact the ERP Manager.
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

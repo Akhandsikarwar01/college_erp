@@ -1,50 +1,100 @@
 {% extends "base.html" %}
+{% block title %}My Dashboard{% endblock %}
+{% block topbar_title %}My Dashboard{% endblock %}
+
 {% block content %}
-
-<h2 class="mb-4">Student Dashboard</h2>
-
-{% if subjects %}
-
-    {% for subject, data in subjects.items %}
-    <div class="card shadow-sm mb-3">
-        <div class="card-body">
-
-            <h5 class="card-title">{{ subject }}</h5>
-
-            <p>
-                Total Classes: <strong>{{ data.total }}</strong><br>
-                Present: <strong>{{ data.present }}</strong>
-            </p>
-
-            <!-- Progress Bar -->
-            <div class="progress mb-2" style="height: 20px;">
-                <div class="progress-bar 
-                    {% if data.percentage < 75 %}
-                        bg-danger
-                    {% else %}
-                        bg-success
-                    {% endif %}"
-                    role="progressbar"
-                    style="width: {{ data.percentage }}%;">
-                    
-                    {{ data.percentage }}%
-                </div>
-            </div>
-
-            {% if data.is_low %}
-                <div class="text-danger fw-bold">
-                    ⚠ Attendance below 75%
-                </div>
-            {% endif %}
-
-        </div>
+<div class="attendance-hero fade-in-up">
+  <div class="attendance-ring">
+    <svg width="110" height="110" viewBox="0 0 110 110">
+      <circle cx="55" cy="55" r="46" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="10"/>
+      <circle cx="55" cy="55" r="46" fill="none"
+        stroke="{% if overall_percentage >= 75 %}#10b981{% elif overall_percentage >= 60 %}#f59e0b{% else %}#ef4444{% endif %}"
+        stroke-width="10" stroke-linecap="round" stroke-dasharray="289"
+        style="stroke-dashoffset:calc(289px - (289px * {{ overall_percentage }} / 100))"/>
+    </svg>
+    <div class="attendance-ring-label" style="color:#fff">
+      <div class="attendance-ring-pct">{{ overall_percentage }}%</div>
+      <div class="attendance-ring-sub">Overall</div>
     </div>
-    {% endfor %}
+  </div>
+  <div class="attendance-hero-stats">
+    <div class="attendance-hero-title">Hello, {{ request.user.first_name }}!</div>
+    <div class="attendance-hero-meta">
+      {% if profile %}
+      <div style="opacity:.7;font-size:.82rem;margin-bottom:.5rem">
+        Adm: {{ profile.admission_number }} &nbsp;·&nbsp; Enr: {{ profile.enrollment_number }}
+      </div>
+      {% endif %}
+      {% if low_attendance %}⚠️ Attendance below 75% — immediate action required.
+      {% else %}✅ Attendance is in good standing!{% endif %}
+    </div>
+    <div class="hero-stat-pills">
+      <div class="hero-stat-pill">📅 {{ total_classes }} Classes</div>
+      <div class="hero-stat-pill">✅ {{ present_classes }} Present</div>
+      <div class="hero-stat-pill">❌ {{ absent_classes }} Absent</div>
+    </div>
+    <div style="margin-top:1rem">
+      <a href="{% url 'scan_attendance' %}" class="btn btn-primary"
+         style="background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.35)">
+        📱 Scan QR Attendance
+      </a>
+    </div>
+  </div>
+</div>
 
+<div class="page-header fade-in-up">
+  <div>
+    <div class="page-header-title">Subject-wise Attendance</div>
+  </div>
+</div>
+
+{% if subject_attendance %}
+  {% for s in subject_attendance %}
+  <div class="attendance-row fade-in-up">
+    <div class="attendance-row-header">
+      <div class="attendance-subject">{{ s.subject }}</div>
+      <div class="attendance-pct {% if s.is_low %}low{% else %}good{% endif %}">{{ s.percentage }}%</div>
+    </div>
+    <div class="attendance-meta">
+      {{ s.present }} present · {{ s.absent }} absent · {{ s.total }} total
+      &nbsp;·&nbsp;
+      <span class="attendance-badge {% if s.is_low %}low{% elif s.percentage < 85 %}warning{% else %}good{% endif %}">
+        {% if s.is_low %}⚠ Below 75%{% elif s.percentage < 85 %}Near Threshold{% else %}Good Standing{% endif %}
+      </span>
+    </div>
+    <div class="progress-bar-track">
+      <div class="progress-bar-fill {% if s.is_low %}low{% elif s.percentage < 85 %}warning{% else %}good{% endif %}"
+           data-width="{{ s.percentage }}" style="width:0%"></div>
+    </div>
+  </div>
+  {% endfor %}
 {% else %}
-    <div class="alert alert-info">
-        No attendance data available.
-    </div>
+  <div class="empty-state fade-in-up">
+    <div class="empty-state-icon">📱</div>
+    <div class="empty-state-title">No attendance records yet</div>
+    <div class="text-sm text-muted mb-3">Scan a teacher's QR code to mark attendance.</div>
+    <a href="{% url 'scan_attendance' %}" class="btn btn-primary">Scan QR</a>
+  </div>
 {% endif %}
 
+{% if recent_records %}
+<div class="card fade-in-up" style="margin-top:2rem">
+  <div class="card-header"><div class="card-title">Recent Attendance</div></div>
+  <div class="table-wrapper" style="border:none;border-radius:0">
+    <table class="erp-table">
+      <thead><tr><th>Subject</th><th>Date</th><th>Time</th><th>Status</th></tr></thead>
+      <tbody>
+        {% for r in recent_records %}
+        <tr>
+          <td class="fw-semibold">{{ r.session.teacher_assignment.subject.name }}</td>
+          <td class="text-muted text-sm">{{ r.session.date|date:"d M Y" }}</td>
+          <td class="text-sm">{% if r.is_present %}{{ r.marked_at|time:"H:i" }}{% else %}—{% endif %}</td>
+          <td>{% if r.is_present %}<span class="attendance-badge good">✓ Present</span>{% else %}<span class="attendance-badge low">✕ Absent</span>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
 {% endblock %}

@@ -1,14 +1,18 @@
 from django.urls import path
-from .views import (
-    create_session,
-    mark_attendance,
-    lock_session,
-    export_attendance_csv
-)
+from . import views
 
 urlpatterns = [
-    path("create/", create_session, name="create_session"),
-    path("mark/<int:session_id>/", mark_attendance, name="mark_attendance"),
-    path("lock/<int:session_id>/", lock_session, name="lock_session"),
-    path("export/<int:session_id>/", export_attendance_csv, name="export_attendance_csv"),
+    # Teacher — session management
+    path("sessions/",                   views.session_list,           name="session_list"),
+    path("sessions/create/",            views.create_session,         name="create_session"),
+    path("sessions/<int:session_id>/",          views.session_detail, name="session_detail"),
+    path("sessions/<int:session_id>/qr/",       views.qr_display,     name="qr_display"),
+    path("sessions/<int:session_id>/close/",    views.close_session,  name="close_session"),
+    path("sessions/<int:session_id>/export/",   views.export_attendance_csv, name="export_attendance_csv"),
+
+    # AJAX — fresh token for QR page
+    path("api/token/<int:session_id>/", views.get_qr_token,           name="get_qr_token"),
+
+    # Student — scan
+    path("scan/",                        views.scan_attendance,        name="scan_attendance"),
 ]

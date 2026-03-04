@@ -1,19 +1,67 @@
-<h2>Login</h2>
+{% extends "base.html" %}
+{% load static %}
 
-<form method="post">
-    {% csrf_token %}
+{% block outer_content %}
+<div class="auth-wrapper">
 
-    <label>Username / Mobile:</label>
-    <input type="text" name="identifier" required>
-    <br><br>
+  <!-- Brand Panel -->
+  <div class="auth-brand-panel">
+    <div class="auth-brand-logo">College ERP</div>
+    <div class="auth-brand-tagline">
+      Your complete academic management system for modern institutions.
+    </div>
+    <div class="auth-brand-illustration">
+      <div class="auth-stat-pill">📚 Academics</div>
+      <div class="auth-stat-pill">📋 Attendance</div>
+      <div class="auth-stat-pill">📊 Analytics</div>
+    </div>
+  </div>
 
-    <label>Password:</label>
-    <input type="password" name="password" required>
-    <br><br>
+  <!-- Form Panel -->
+  <div class="auth-form-panel">
+    <div class="auth-form-inner fade-in-up">
 
-    <button type="submit">Login</button>
-</form>
+      <div class="auth-title">Welcome back</div>
+      <div class="auth-subtitle">Sign in to your College ERP account</div>
 
-{% for message in messages %}
-<p>{{ message }}</p>
-{% endfor %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+          {% if message.tags == 'error' or message.tags == 'danger' %}✕{% else %}ℹ{% endif %}
+          {{ message }}
+        </div>
+      {% endfor %}
+
+      <form method="post" action="{% url 'login' %}">
+        {% csrf_token %}
+
+        <div class="form-group">
+          <label class="form-label" for="identifier">Username or Mobile</label>
+          <input class="form-control" type="text" id="identifier" name="identifier"
+                 placeholder="john.doe or 9876543210" required autofocus
+                 value="{{ request.POST.identifier|default:'' }}">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <input class="form-control" type="password" id="password" name="password"
+                 placeholder="Enter your password" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-full btn-lg" style="margin-top:.5rem">
+          Sign In
+        </button>
+      </form>
+
+      <div class="divider"></div>
+
+      <div style="text-align:center;font-size:.88rem;color:var(--gray-500)">
+        Don't have an account?
+        <a href="{% url 'signup' %}" style="color:var(--brand-600);font-weight:600;text-decoration:none">
+          Register here
+        </a>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

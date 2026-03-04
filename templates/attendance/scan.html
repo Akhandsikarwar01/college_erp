@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+{% block title %}Scan QR{% endblock %}
+{% block topbar_title %}Scan Attendance QR{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"
+        crossorigin="anonymous"></script>
+<style>
+.scan-wrap { max-width:460px; margin:0 auto; }
+.camera-card { background:#fff; border:1px solid var(--gray-200); border-radius:var(--radius-lg); overflow:hidden; margin-bottom:1.25rem; }
+.camera-header { padding:.9rem 1.25rem; background:var(--gray-50); border-bottom:1px solid var(--gray-200);
+  display:flex; align-items:center; justify-content:space-between; }
+.viewport { position:relative; width:100%; aspect-ratio:1; background:#111; overflow:hidden; }
+#vid { width:100%; height:100%; object-fit:cover; }
+#cnv { display:none; }
+
+/* Corner brackets */
+.scan-overlay { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; }
+.scan-frame { width:200px; height:200px; position:relative; }
+.scan-frame::before,.scan-frame::after,.scan-frame span::before,.scan-frame span::after {
+  content:''; position:absolute; width:28px; height:28px; border-color:var(--brand-400); border-style:solid; }
+.scan-frame::before { top:0;left:0;border-width:3px 0 0 3px; }
+.scan-frame::after  { top:0;right:0;border-width:3px 3px 0 0; }
+.scan-frame span::before { bottom:0;left:0;border-width:0 0 3px 3px; }
+.scan-frame span::after  { bottom:0;right:0;border-width:0 3px 3px 0; }
+
+.scan-line { position:absolute; left:8px;right:8px; height:2px;
+  background:linear-gradient(90deg,transparent,var(--brand-400),transparent);
+  animation:sl 2s ease-in-out infinite; }
+@keyframes sl { 0%{top:8px;} 50%{top:calc(100% - 10px);} 100%{top:8px;} }
+
+.scan-status { padding:.9rem 1.25rem; font-size:.88rem; font-weight:500;
+  display:flex; align-items:center; gap:.5rem; min-height:48px; }
+.scan-status.scanning { color:var(--gray-500); }
+.scan-status.success  { color:var(--success); background:var(--success-bg); }
+.scan-status.error    { color:var(--danger); background:var(--danger-bg); }
+
+.result-card,.error-card { border-radius:var(--radius); padding:1.25rem; margin-bottom:1rem; display:none; }
+.result-card { background:var(--success-bg); border:1.5px solid var(--success); }
+.result-card.show,.error-card.show { display:block; }
+.error-card  { background:var(--danger-bg);  border:1.5px solid var(--danger); }
+
+.result-row { display:flex; justify-content:space-between; font-size:.88rem;
+  padding:.3rem 0; border-bottom:1px solid rgba(16,185,129,.15); }
+.result-row:last-child { border:none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="scan-wrap fade-in-up">
+  <div class="page-header" style="max-width:100%">
+    <div>
+      <div class="page-header-title">Scan QR Code</div>
+      <div class="page-header-subtitle">Point your camera at the teacher's screen</div>
+    </div>
+  </div>
+
+  <div class="result-card" id="resultCard">
+    <div style="font-weight:700;color:var(--success);margin-bottom:.75rem;font-size:1.05rem">✅ Attendance Marked!</div>
+    <div id="resultDetails"></div>
+  </div>
+
+  <div class="error-card" id="errorCard">
+    <div style="font-weight:700;color:var(--danger);margin-bottom:.5rem">❌ Error</div>
+    <div id="errorMsg" style="font-size:.9rem;color:var(--gray-700)"></div>
+    <button class="btn btn-primary btn-sm" style="margin-top:.75rem" onclick="resume()">Try Again</button>
+  </div>
+
+  <div class="camera-card">
+    <div class="camera-header">
+      <span style="font-weight:600;font-size:.88rem">📷 Camera</span>
+      <button class="btn btn-sm btn-secondary" id="camBtn" onclick="toggleCam()">Stop</button>
+    </div>
+    <div class="viewport">
+      <video id="vid" autoplay playsinline muted></video>
+      <div class="scan-overlay">
+        <div class="scan-frame"><span></span><div class="scan-line"></div></div>
+      </div>
+      <canvas id="cnv"></canvas>
+    </div>
+    <div class="scan-status scanning" id="status">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      Scanning…
+    </div>
+  </div>
+
+  <div style="text-align:center">
+    <button class="btn btn-outline btn-sm" onclick="toggleManual()">📝 Enter manually</button>
+  </div>
+
+  <div class="card" id="manualCard" style="display:none;margin-top:1rem">
+    <div class="card-body">
+      <div class="form-group">
+        <label class="form-label">QR Payload (JSON)</label>
+        <textarea class="form-control" id="manualInput" rows="3"
+                  placeholder='{"session_id":1,"token":"abc..."}'></textarea>
+      </div>
+      <button class="btn btn-primary" onclick="submitManual()">Submit</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const SCAN_URL   = "{% url 'scan_attendance' %}";
+const CSRF       = "{{ csrf_token }}";
+let stream=null, raf=null, active=true, paused=false;
+const vid=document.getElementById("vid");
+const cnv=document.getElementById("cnv");
+const ctx=cnv.getContext("2d");
+const statusEl=document.getElementById("status");
+
+async function startCam() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}});
+    vid.srcObject = stream;
+    vid.play();
+    raf = requestAnimationFrame(loop);
+  } catch(e) {
+    setStatus("error","⚠ Camera denied. Use manual entry.");
+    document.getElementById("manualCard").style.display="block";
+    document.getElementById("camBtn").style.display="none";
+  }
+}
+
+function loop() {
+  if (!active||paused) return;
+  if (vid.readyState===vid.HAVE_ENOUGH_DATA) {
+    cnv.width=vid.videoWidth; cnv.height=vid.videoHeight;
+    ctx.drawImage(vid,0,0);
+    const img=ctx.getImageData(0,0,cnv.width,cnv.height);
+    const code=jsQR(img.data,img.width,img.height,{inversionAttempts:"dontInvert"});
+    if (code) { paused=true; setStatus("scanning","⏳ Verifying…"); submit(code.data); return; }
+  }
+  raf=requestAnimationFrame(loop);
+}
+
+async function submit(payload) {
+  const fd=new FormData();
+  fd.append("qr_payload",payload);
+  fd.append("csrfmiddlewaretoken",CSRF);
+  try {
+    const r=await fetch(SCAN_URL,{method:"POST",body:fd,credentials:"same-origin"});
+    const d=await r.json();
+    if (d.success) { showResult(d); stopCam(); }
+    else showError(d.message);
+  } catch(e) { showError("Network error. Try again."); }
+}
+
+function showResult(d) {
+  document.getElementById("resultCard").classList.add("show");
+  document.getElementById("errorCard").classList.remove("show");
+  document.getElementById("resultDetails").innerHTML=`
+    <div class="result-row"><span style="color:var(--gray-500)">Student</span><span style="font-weight:600">${d.student_name}</span></div>
+    <div class="result-row"><span style="color:var(--gray-500)">Subject</span><span style="font-weight:600">${d.subject}</span></div>
+    <div class="result-row"><span style="color:var(--gray-500)">Date</span><span style="font-weight:600">${d.date}</span></div>
+    <div class="result-row"><span style="color:var(--gray-500)">Time</span><span style="font-weight:600">${d.time}</span></div>
+  `;
+  setStatus("success","✅ "+d.message);
+}
+
+function showError(msg) {
+  document.getElementById("errorCard").classList.add("show");
+  document.getElementById("resultCard").classList.remove("show");
+  document.getElementById("errorMsg").textContent=msg;
+  setStatus("error","❌ "+msg);
+}
+
+function setStatus(t,m){statusEl.className="scan-status "+t;statusEl.innerHTML=m;}
+
+function resume(){document.getElementById("errorCard").classList.remove("show");paused=false;setStatus("scanning","🔍 Scanning…");raf=requestAnimationFrame(loop);}
+
+function stopCam(){active=false;cancelAnimationFrame(raf);stream?.getTracks().forEach(t=>t.stop());document.getElementById("camBtn").textContent="Start";}
+
+function toggleCam(){if(active){stopCam();}else{active=true;paused=false;startCam();document.getElementById("camBtn").textContent="Stop";}}
+
+function toggleManual(){const c=document.getElementById("manualCard");c.style.display=c.style.display==="none"?"block":"none";}
+
+function submitManual(){const p=document.getElementById("manualInput").value.trim();if(!p){alert("Enter payload.");return;}paused=true;submit(p);}
+
+startCam();
+</script>
+{% endblock %}

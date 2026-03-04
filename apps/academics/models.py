@@ -1,23 +1,33 @@
+"""
+Academics models: Department → Program → Course → Class → Section
+                            ↓
+                         Semester → Subject
+"""
+
 from django.db import models
 from apps.core.models import TimeStampedModel
 
 
-
 class Department(TimeStampedModel):
-    code = models.CharField(max_length=20)
+    code = models.CharField(max_length=20, unique=True)
     name = models.CharField(max_length=200)
 
+    class Meta:
+        ordering = ["name"]
+
     def __str__(self):
-        return f"{self.code} - {self.name}"
+        return f"{self.code} – {self.name}"
 
 
 class Program(TimeStampedModel):
     department = models.ForeignKey(
-        Department,
-        on_delete=models.CASCADE,
-        related_name="programs"
+        Department, on_delete=models.CASCADE, related_name="programs"
     )
     name = models.CharField(max_length=100)
+
+    class Meta:
+        ordering = ["name"]
+        unique_together = ("department", "name")
 
     def __str__(self):
         return f"{self.name} ({self.department.code})"
@@ -25,69 +35,75 @@ class Program(TimeStampedModel):
 
 class Course(TimeStampedModel):
     program = models.ForeignKey(
-        Program,
-        on_delete=models.CASCADE,
-        related_name="courses"
+        Program, on_delete=models.CASCADE, related_name="courses"
     )
     name = models.CharField(max_length=100)
 
-    def __str__(self):
-        return f"{self.name} - {self.program.name}"
-    
-
-class Year(TimeStampedModel):
-    name = models.CharField(max_length=50)  # Example: 2025-2026
+    class Meta:
+        ordering = ["name"]
+        unique_together = ("program", "name")
 
     def __str__(self):
-        return self.name
-
-
-class Semester(TimeStampedModel):
-    year = models.ForeignKey(Year, on_delete=models.CASCADE, related_name="semesters")
-    name = models.CharField(max_length=50)  # Example: Semester 1
-
-    def __str__(self):
-        return f"{self.name} ({self.year})"
-
-
+        return f"{self.name} – {self.program.name}"
 
 
 class Class(TimeStampedModel):
-    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="classes")
-    name = models.CharField(max_length=50)  # Year 1 / Year 2
+    """Represents a year/level within a course, e.g. Year 1, Year 2."""
+    course = models.ForeignKey(
+        Course, on_delete=models.CASCADE, related_name="classes"
+    )
+    name = models.CharField(max_length=50)  # e.g. "Year 1"
+
+    class Meta:
+        ordering = ["name"]
+        unique_together = ("course", "name")
+        verbose_name = "Class"
+        verbose_name_plural = "Classes"
 
     def __str__(self):
-        return f"{self.name} - {self.course}"
+        return f"{self.name} – {self.course}"
 
 
 class Section(TimeStampedModel):
-    class_obj = models.ForeignKey(Class, on_delete=models.CASCADE, related_name="sections")
-    name = models.CharField(max_length=10)  # A, B, C
-
-    def __str__(self):
-        return f"{self.name} ({self.class_obj})"
-    
-class Semester(TimeStampedModel):
-    course = models.ForeignKey(
-        Course,
-        on_delete=models.CASCADE,
-        related_name="semesters"
+    """Batch/division within a class, e.g. A, B, C."""
+    class_obj = models.ForeignKey(
+        Class, on_delete=models.CASCADE, related_name="sections"
     )
-    number = models.PositiveIntegerField()  # 1 to 8
+    name = models.CharField(max_length=10)
+
+    class Meta:
+        ordering = ["name"]
+        unique_together = ("class_obj", "name")
 
     def __str__(self):
-        return f"{self.course.name} - Sem {self.number}"
+        return f"Section {self.name} ({self.class_obj})"
+
+
+class Semester(TimeStampedModel):
+    """Semester within a Course, numbered 1–8."""
+    course = models.ForeignKey(
+        Course, on_delete=models.CASCADE, related_name="semesters"
+    )
+    number = models.PositiveIntegerField()
+
+    class Meta:
+        ordering = ["number"]
+        unique_together = ("course", "number")
+
+    def __str__(self):
+        return f"{self.course.name} – Sem {self.number}"
 
 
 class Subject(TimeStampedModel):
     semester = models.ForeignKey(
-        Semester,
-        on_delete=models.CASCADE,
-        related_name="subjects"
+        Semester, on_delete=models.CASCADE, related_name="subjects"
     )
     name = models.CharField(max_length=100)
+    code = models.CharField(max_length=20, blank=True)
+
+    class Meta:
+        ordering = ["name"]
+        unique_together = ("semester", "name")
 
     def __str__(self):
         return f"{self.name} (Sem {self.semester.number})"
-    
-

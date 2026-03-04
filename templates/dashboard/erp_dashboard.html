@@ -1,4 +1,104 @@
-<h2>ERP Manager Dashboard</h2>
+{% extends "base.html" %}
+{% block title %}ERP Manager Dashboard{% endblock %}
+{% block topbar_title %}ERP Dashboard{% endblock %}
 
-<p>Total Sessions: {{ total_sessions }}</p>
-<p>Total Students: {{ total_students }}</p>
+{% block content %}
+
+<div class="page-header fade-in-up">
+  <div>
+    <div class="page-header-title">Welcome, {{ request.user.first_name }} 👋</div>
+    <div class="page-header-subtitle">College ERP — System Overview</div>
+  </div>
+</div>
+
+<div class="stats-grid fade-in-up">
+  <div class="stat-card">
+    <div class="stat-card-icon indigo">🎓</div>
+    <div class="stat-card-value">{{ total_students }}</div>
+    <div class="stat-card-label">Students</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-icon green">👨‍🏫</div>
+    <div class="stat-card-value">{{ total_teachers }}</div>
+    <div class="stat-card-label">Teachers</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-icon amber">📅</div>
+    <div class="stat-card-value">{{ total_sessions }}</div>
+    <div class="stat-card-label">Total Sessions</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-icon red">⏳</div>
+    <div class="stat-card-value">{{ pending_count }}</div>
+    <div class="stat-card-label">Pending Approvals</div>
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:1rem;margin-bottom:2rem" class="fade-in-up">
+  <a href="{% url 'pending_approvals' %}" class="quick-action-card">
+    <div class="qa-icon">👤</div>
+    <div class="qa-label">Approve Users</div>
+    {% if pending_count > 0 %}<div style="font-size:.75rem;color:var(--danger);font-weight:600;margin-top:.25rem">{{ pending_count }} waiting</div>{% endif %}
+  </a>
+  <a href="{% url 'import_students' %}" class="quick-action-card">
+    <div class="qa-icon">📂</div>
+    <div class="qa-label">Import Students</div>
+  </a>
+  <a href="/admin/" class="quick-action-card">
+    <div class="qa-icon">🛡</div>
+    <div class="qa-label">Admin Panel</div>
+  </a>
+</div>
+
+{% if pending_users %}
+<div class="card fade-in-up" style="border-color:var(--warning)">
+  <div class="card-header" style="background:var(--warning-bg)">
+    <div class="card-title" style="color:#92400e">⏳ Pending Approvals</div>
+    <a href="{% url 'pending_approvals' %}" class="btn btn-sm btn-outline">Manage All →</a>
+  </div>
+  <div class="table-wrapper" style="border:none;border-radius:0">
+    <table class="erp-table">
+      <thead><tr><th>Name</th><th>Role</th><th>Username</th><th>Joined</th><th>Actions</th></tr></thead>
+      <tbody>
+        {% for u in pending_users|slice:":5" %}
+        <tr>
+          <td class="fw-semibold">{{ u.full_name }}</td>
+          <td>
+            <span class="status-badge {% if u.role == 'TEACHER' %}open{% else %}locked{% endif %}">
+              {{ u.get_role_display }}
+            </span>
+          </td>
+          <td class="text-muted text-sm">{{ u.username }}</td>
+          <td class="text-muted text-sm">{{ u.date_joined|date:"d M Y" }}</td>
+          <td>
+            <div class="flex gap-2">
+              <form method="post" action="{% url 'approve_user' u.id %}" style="display:inline">
+                {% csrf_token %}<input type="hidden" name="next" value="{% url 'dashboard' %}">
+                <button class="btn btn-sm btn-success">✅ Approve</button>
+              </form>
+              <form method="post" action="{% url 'reject_user' u.id %}" style="display:inline"
+                    onsubmit="return confirm('Reject and delete {{ u.full_name }}?')">
+                {% csrf_token %}<input type="hidden" name="next" value="{% url 'dashboard' %}">
+                <button class="btn btn-sm btn-danger">❌ Reject</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if pending_users|length > 5 %}
+  <div style="padding:.75rem 1.25rem;text-align:center;border-top:1px solid var(--gray-100)">
+    <a href="{% url 'pending_approvals' %}" style="font-size:.88rem;color:var(--brand-600)">
+      View all {{ pending_users|length }} pending users →
+    </a>
+  </div>
+  {% endif %}
+</div>
+{% else %}
+<div class="alert alert-info fade-in-up">✅ No pending approvals — all users are approved.</div>
+{% endif %}
+
+{% endblock %}

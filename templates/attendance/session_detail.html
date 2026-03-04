@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Session Detail{% endblock %}
+{% block topbar_title %}Session Details{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in-up">
+  <div>
+    <div class="page-header-title">{{ session.teacher_assignment.subject.name }}</div>
+    <div class="page-header-subtitle">Section {{ session.teacher_assignment.section.name }} &nbsp;·&nbsp; {{ session.date|date:"d M Y, l" }}</div>
+  </div>
+  <div style="display:flex;gap:.75rem;flex-wrap:wrap">
+    {% if session.is_active %}
+    <a href="{% url 'qr_display' session.id %}" class="btn btn-primary">📱 Open QR</a>
+    <a href="{% url 'close_session' session.id %}" class="btn btn-danger" onclick="return confirm('Close session?')">🔒 Close</a>
+    {% endif %}
+    <a href="{% url 'export_attendance_csv' session.id %}" class="btn btn-secondary">↓ CSV</a>
+    <a href="{% url 'session_list' %}" class="btn btn-outline">← Sessions</a>
+  </div>
+</div>
+
+<div class="stats-grid fade-in-up" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr))">
+  <div class="stat-card">
+    <div class="stat-card-icon indigo">👥</div>
+    <div class="stat-card-value">{{ total }}</div>
+    <div class="stat-card-label">Total</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-icon green">✅</div>
+    <div class="stat-card-value">{{ present }}</div>
+    <div class="stat-card-label">Present</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-icon red">❌</div>
+    <div class="stat-card-value">{{ absent }}</div>
+    <div class="stat-card-label">Absent</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-icon {% if percentage >= 75 %}green{% else %}red{% endif %}">📊</div>
+    <div class="stat-card-value">{{ percentage }}%</div>
+    <div class="stat-card-label">Rate</div>
+  </div>
+</div>
+
+<div class="card fade-in-up">
+  <div class="card-header">
+    <div class="card-title">Attendance Records</div>
+    <span class="status-badge {% if session.is_active %}open{% else %}locked{% endif %}">
+      {% if session.is_active %}🟢 Active{% else %}🔒 Closed{% endif %}
+    </span>
+  </div>
+  {% if records %}
+  <div class="table-wrapper" style="border:none;border-radius:0">
+    <table class="erp-table">
+      <thead>
+        <tr><th>Roll</th><th>Name</th><th>Admission No</th><th>Enrollment No</th><th>Time</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        {% for r in records %}
+        <tr>
+          <td class="text-muted text-sm">{{ r.student.roll_number }}</td>
+          <td class="fw-semibold">{{ r.student.user.full_name }}</td>
+          <td class="text-muted text-sm">{{ r.student.admission_number }}</td>
+          <td class="text-muted text-sm">{{ r.student.enrollment_number }}</td>
+          <td class="text-sm">{% if r.is_present %}{{ r.marked_at|time:"H:i" }}{% else %}—{% endif %}</td>
+          <td>
+            {% if r.is_present %}<span class="attendance-badge good">✓ Present</span>
+            {% else %}<span class="attendance-badge low">✕ Absent</span>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state-icon">📋</div>
+    <div class="empty-state-title">No students have scanned yet</div>
+    <div class="text-sm text-muted">Share the QR code with students.</div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

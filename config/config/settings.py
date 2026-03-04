@@ -5,9 +5,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-1p5ilzx66^#+a97_o6wnx2*7uj9&zwj%^7xsg!i8hf%arzjttz'
 
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = [
+    "127.0.0.1",
+    "localhost",
     "erp.akhandsikarwar.in",
     "college-erp-vlo5.onrender.com",
 ]

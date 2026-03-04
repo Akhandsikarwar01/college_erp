@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% block title %}Live QR — {{ session.teacher_assignment.subject.name }}{% endblock %}
+{% block topbar_title %}Live QR Attendance{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"
+        crossorigin="anonymous"></script>
+<style>
+.qr-shell { display:grid; grid-template-columns:1fr 1fr; gap:2rem; align-items:start; }
+@media(max-width:768px){.qr-shell{grid-template-columns:1fr;}}
+
+.qr-card { background:#fff; border:1px solid var(--gray-200); border-radius:var(--radius-lg); padding:2rem; text-align:center; }
+
+.qr-frame { display:inline-flex; align-items:center; justify-content:center; padding:1rem;
+  background:#fff; border:3px solid var(--brand-200); border-radius:var(--radius);
+  margin:1rem 0; position:relative; transition:opacity .2s; }
+.qr-frame.refreshing { opacity:.2; }
+
+.qr-countdown { font-size:3.5rem; font-weight:800; color:var(--brand-600); line-height:1;
+  font-variant-numeric:tabular-nums; }
+.qr-countdown.urgent { color:var(--danger); }
+.qr-label { font-size:.75rem; color:var(--gray-500); text-transform:uppercase; letter-spacing:.08em; margin-top:.25rem; }
+
+.live-counter { display:flex; align-items:center; justify-content:center; gap:1rem;
+  padding:1rem; background:var(--success-bg); border-radius:var(--radius); margin-top:1rem; }
+.live-counter-num { font-size:2.5rem; font-weight:800; color:var(--success); }
+.live-dot { width:10px; height:10px; border-radius:50%; background:var(--success);
+  animation:pulse 1.5s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:.4;transform:scale(1.5);} }
+
+.info-row { display:flex; justify-content:space-between; align-items:center;
+  padding:.6rem 0; border-bottom:1px solid var(--gray-100); font-size:.9rem; }
+.info-row:last-child { border:none; }
+.info-label { color:var(--gray-500); }
+.info-value { font-weight:600; color:var(--gray-800); }
+
+/* Circular timer */
+.qr-timer-wrap { position:absolute; top:-14px; right:-14px; }
+.qr-timer-wrap svg { transform:rotate(-90deg); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in-up">
+  <div>
+    <div class="page-header-title">Live Attendance QR</div>
+    <div class="page-header-subtitle">QR rotates every 5 seconds — keep this screen visible to students</div>
+  </div>
+  <div style="display:flex;gap:.75rem">
+    <a href="{% url 'session_detail' session.id %}" class="btn btn-secondary">📋 Records</a>
+    <a href="{% url 'close_session' session.id %}" class="btn btn-danger"
+       onclick="return confirm('Close session? Students can no longer scan.')">🔒 Close Session</a>
+  </div>
+</div>
+
+<div class="qr-shell fade-in-up">
+
+  <!-- QR Panel -->
+  <div class="qr-card">
+    <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--gray-400);margin-bottom:.5rem">
+      Live QR Code — Auto Refreshes
+    </div>
+
+    <div class="qr-frame" id="qrFrame">
+      <div id="qrcode"></div>
+      <div class="qr-timer-wrap">
+        <svg viewBox="0 0 44 44" width="44" height="44">
+          <circle cx="22" cy="22" r="18" fill="none" stroke="var(--gray-100)" stroke-width="5"/>
+          <circle cx="22" cy="22" r="18" fill="none" stroke="var(--brand-500)" stroke-width="5"
+                  stroke-linecap="round" stroke-dasharray="113" id="timerArc"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="qr-countdown" id="countdown">5</div>
+    <div class="qr-label">seconds until next refresh</div>
+
+    <div class="live-counter">
+      <div class="live-dot"></div>
+      <div>
+        <div class="live-counter-num" id="presentCount">0</div>
+        <div style="font-size:.72rem;color:var(--gray-500);text-transform:uppercase;letter-spacing:.06em">students present</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Info Panel -->
+  <div>
+    <div class="card" style="margin-bottom:1.25rem">
+      <div class="card-body">
+        <div style="font-weight:700;color:var(--gray-700);margin-bottom:.75rem">Session Info</div>
+        <div class="info-row"><span class="info-label">Subject</span><span class="info-value">{{ session.teacher_assignment.subject.name }}</span></div>
+        <div class="info-row"><span class="info-label">Section</span><span class="info-value">Section {{ session.teacher_assignment.section.name }}</span></div>
+        <div class="info-row"><span class="info-label">Course</span><span class="info-value">{{ session.teacher_assignment.section.class_obj.course.name }}</span></div>
+        <div class="info-row"><span class="info-label">Date</span><span class="info-value">{{ session.date|date:"d M Y, l" }}</span></div>
+        <div class="info-row"><span class="info-label">Status</span>
+          <span class="status-badge open" id="sessionStatus">🟢 Active</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert alert-info">
+      ℹ <strong>How it works:</strong> QR rotates every 5 seconds. Each student scans once. Expired codes are automatically rejected. Students outside this section cannot mark attendance.
+    </div>
+    <div class="alert alert-warning" style="margin-top:.75rem">
+      ⚠ Do not close or refresh this tab while taking attendance.
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const SESSION_ID = {{ session.id }};
+const TOKEN_URL  = "{% url 'get_qr_token' session.id %}";
+let   countdown  = 5;
+let   lastPayload = null;
+
+// Draw initial QR
+const initPayload = {{ initial_payload|safe }};
+renderQR(JSON.stringify(initPayload));
+lastPayload = JSON.stringify(initPayload);
+
+function renderQR(str) {
+  const box   = document.getElementById("qrcode");
+  const frame = document.getElementById("qrFrame");
+  frame.classList.add("refreshing");
+  box.innerHTML = "";
+  new QRCode(box, { text: str, width: 240, height: 240,
+    colorDark: "#1e293b", colorLight: "#ffffff",
+    correctLevel: QRCode.CorrectLevel.M });
+  setTimeout(() => frame.classList.remove("refreshing"), 120);
+}
+
+// Arc circumference = 2π×18 ≈ 113
+const arc = document.getElementById("timerArc");
+function updateArc(v) {
+  arc.style.strokeDashoffset = 113 * (1 - v / 5);
+}
+updateArc(5);
+
+// Countdown tick
+const cdEl = document.getElementById("countdown");
+const ticker = setInterval(() => {
+  countdown = Math.max(0, countdown - 1);
+  cdEl.textContent = countdown;
+  cdEl.classList.toggle("urgent", countdown <= 1);
+  updateArc(countdown);
+  if (countdown === 0) fetchToken();
+}, 1000);
+
+async function fetchToken() {
+  try {
+    const r = await fetch(TOKEN_URL, { credentials: "same-origin" });
+    if (!r.ok) {
+      if (r.status === 410) {
+        document.getElementById("sessionStatus").innerHTML = "🔴 Closed";
+        clearInterval(ticker);
+      }
+      return;
+    }
+    const d = await r.json();
+    if (d.payload !== lastPayload) {
+      renderQR(d.payload);
+      lastPayload = d.payload;
+    }
+    document.getElementById("presentCount").textContent = d.present_count;
+    countdown = d.expires_in;
+  } catch(e) {}
+}
+
+// Fetch from server every 5s independently
+setInterval(fetchToken, 5000);
+</script>
+{% endblock %}

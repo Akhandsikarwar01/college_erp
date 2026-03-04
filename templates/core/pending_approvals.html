@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% block title %}Pending Approvals{% endblock %}
+{% block topbar_title %}Pending Approvals{% endblock %}
+
+{% block content %}
+
+<div class="page-header fade-in-up">
+  <div>
+    <div class="page-header-title">Pending Approvals</div>
+    <div class="page-header-subtitle">
+      {{ pending_users|length }} user{% if pending_users|length != 1 %}s{% endif %} waiting for approval
+    </div>
+  </div>
+  {% if pending_users %}
+  <form method="post" action="{% url 'bulk_approve' %}" id="bulkForm">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{% url 'pending_approvals' %}">
+    <!-- user_ids injected by JS -->
+    <button type="submit" class="btn btn-success" id="bulkApproveBtn" disabled>
+      ✅ Approve Selected (<span id="selectedCount">0</span>)
+    </button>
+  </form>
+  {% endif %}
+</div>
+
+{% if pending_users %}
+
+<!-- Filter tabs -->
+<div style="display:flex;gap:.5rem;margin-bottom:1.25rem;flex-wrap:wrap" class="fade-in-up">
+  <button class="btn btn-sm btn-primary" onclick="filterRole('ALL')" id="tab-ALL">All ({{ pending_users|length }})</button>
+  <button class="btn btn-sm btn-outline" onclick="filterRole('STUDENT')" id="tab-STUDENT">Students</button>
+  <button class="btn btn-sm btn-outline" onclick="filterRole('TEACHER')" id="tab-TEACHER">Teachers</button>
+</div>
+
+<form method="post" id="actionForm">
+  {% csrf_token %}
+  <input type="hidden" name="next" value="{% url 'pending_approvals' %}">
+
+  <div class="card fade-in-up">
+    <div class="card-header">
+      <label style="display:flex;align-items:center;gap:.5rem;font-weight:600;cursor:pointer">
+        <input type="checkbox" id="selectAll" style="width:16px;height:16px">
+        Select All
+      </label>
+      <span class="text-sm text-muted">Click a row to select</span>
+    </div>
+
+    <div class="table-wrapper" style="border:none;border-radius:0">
+      <table class="erp-table" id="usersTable">
+        <thead>
+          <tr>
+            <th style="width:40px"></th>
+            <th>Name</th>
+            <th>Role</th>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Mobile</th>
+            <th>Joined</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in pending_users %}
+          <tr class="user-row" data-role="{{ u.role }}" data-id="{{ u.id }}"
+              style="cursor:pointer" onclick="toggleRow(this)">
+            <td onclick="event.stopPropagation()">
+              <input type="checkbox" class="row-cb" value="{{ u.id }}"
+                     style="width:16px;height:16px" onclick="updateBulk()">
+            </td>
+            <td>
+              <div class="fw-semibold">{{ u.full_name }}</div>
+            </td>
+            <td>
+              <span class="status-badge {% if u.role == 'TEACHER' %}open{% else %}locked{% endif %}"
+                    style="{% if u.role == 'TEACHER' %}background:#eff6ff;color:#3b82f6;border-color:#bfdbfe{% endif %}">
+                {{ u.get_role_display }}
+              </span>
+            </td>
+            <td class="text-muted text-sm">{{ u.username }}</td>
+            <td class="text-sm">{{ u.email }}</td>
+            <td class="text-muted text-sm">{{ u.mobile_number|default:"—" }}</td>
+            <td class="text-muted text-sm">{{ u.date_joined|date:"d M Y" }}</td>
+            <td onclick="event.stopPropagation()">
+              <div class="flex gap-2">
+                <!-- Approve -->
+                <form method="post" action="{% url 'approve_user' u.id %}" style="display:inline">
+                  {% csrf_token %}
+                  <input type="hidden" name="next" value="{% url 'pending_approvals' %}">
+                  <button type="submit" class="btn btn-sm btn-success"
+                          title="Approve {{ u.full_name }}">✅ Approve</button>
+                </form>
+                <!-- Reject -->
+                <form method="post" action="{% url 'reject_user' u.id %}" style="display:inline"
+                      onsubmit="return confirm('Permanently reject and delete {{ u.full_name }}?')">
+                  {% csrf_token %}
+                  <input type="hidden" name="next" value="{% url 'pending_approvals' %}">
+                  <button type="submit" class="btn btn-sm btn-danger"
+                          title="Reject {{ u.full_name }}">❌ Reject</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</form>
+
+{% else %}
+
+<div class="empty-state fade-in-up">
+  <div class="empty-state-icon">🎉</div>
+  <div class="empty-state-title">All caught up!</div>
+  <div class="text-sm text-muted">No pending approvals right now.</div>
+  <a href="{% url 'dashboard' %}" class="btn btn-primary" style="margin-top:1rem">Back to Dashboard</a>
+</div>
+
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ── Row click to select ─────────────────────────────────
+function toggleRow(row) {
+  const cb = row.querySelector('.row-cb');
+  cb.checked = !cb.checked;
+  row.classList.toggle('selected-row', cb.checked);
+  updateBulk();
+}
+
+// ── Select all ──────────────────────────────────────────
+document.getElementById('selectAll')?.addEventListener('change', function() {
+  document.querySelectorAll('.row-cb:not([disabled])').forEach(cb => {
+    cb.checked = this.checked;
+    cb.closest('tr').classList.toggle('selected-row', this.checked);
+  });
+  updateBulk();
+});
+
+// ── Update bulk approve button ──────────────────────────
+function updateBulk() {
+  const checked = [...document.querySelectorAll('.row-cb:checked')];
+  const btn   = document.getElementById('bulkApproveBtn');
+  const count = document.getElementById('selectedCount');
+  if (!btn) return;
+  btn.disabled = checked.length === 0;
+  if (count) count.textContent = checked.length;
+
+  // Sync hidden inputs into bulk form
+  const form = document.getElementById('bulkForm');
+  form.querySelectorAll('input[name="user_ids"]').forEach(i => i.remove());
+  checked.forEach(cb => {
+    const inp = document.createElement('input');
+    inp.type = 'hidden'; inp.name = 'user_ids'; inp.value = cb.value;
+    form.appendChild(inp);
+  });
+}
+
+// ── Role filter tabs ────────────────────────────────────
+function filterRole(role) {
+  document.querySelectorAll('.user-row').forEach(row => {
+    row.style.display = (role === 'ALL' || row.dataset.role === role) ? '' : 'none';
+  });
+  document.querySelectorAll('[id^="tab-"]').forEach(b => b.className = 'btn btn-sm btn-outline');
+  document.getElementById('tab-' + role).className = 'btn btn-sm btn-primary';
+}
+</script>
+
+<style>
+tr.selected-row { background: var(--brand-50) !important; }
+</style>
+{% endblock %}

@@ -1,19 +1,50 @@
-<h2>Create Attendance Session</h2>
+{% extends "base.html" %}
+{% block title %}New Session{% endblock %}
+{% block topbar_title %}Create Session{% endblock %}
 
-<form method="POST">
-    {% csrf_token %}
+{% block content %}
+<div style="max-width:520px;margin:0 auto">
+  <div class="page-header fade-in-up">
+    <div>
+      <div class="page-header-title">New Attendance Session</div>
+      <div class="page-header-subtitle">QR screen opens immediately after creation</div>
+    </div>
+    <a href="{% url 'dashboard' %}" class="btn btn-secondary">← Back</a>
+  </div>
 
-    <label>Select Subject</label>
-    <select name="assignment">
-        {% for a in assignments %}
-            <option value="{{ a.id }}">
-                {{ a.section }} - {{ a.subject }}
-            </option>
-        {% endfor %}
-    </select>
+  <div class="card fade-in-up">
+    <div class="card-body">
+      <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+          <label class="form-label">Subject / Section</label>
+          <select class="form-control form-select" name="assignment" required>
+            <option value="">— Select —</option>
+            {% for a in assignments %}
+            <option value="{{ a.id }}">{{ a.subject.name }} — Sec {{ a.section.name }}</option>
+            {% empty %}
+            <option disabled>No assignments found. Contact ERP Manager.</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date</label>
+          <input class="form-control" type="date" name="date" id="dateInput" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full btn-lg">
+          📱 Create & Open QR
+        </button>
+      </form>
+    </div>
+  </div>
 
-    <label>Date</label>
-    <input type="date" name="date">
-
-    <button type="submit">Create Session</button>
-</form>
+  <div class="alert alert-info fade-in-up" style="margin-top:1rem">
+    ℹ One session per subject per day. After creation you'll be taken directly to the live QR screen.
+  </div>
+</div>
+<script>
+  const d = new Date().toISOString().split('T')[0];
+  document.getElementById('dateInput').value = d;
+  document.getElementById('dateInput').max   = d;
+</script>
+{% endblock %}

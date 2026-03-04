@@ -1,25 +1,57 @@
 {% extends "base.html" %}
-{% block content %}
+{% load static %}
 
-<div class="card shadow-sm mx-auto" style="max-width: 400px;">
-    <div class="card-body">
+{% block outer_content %}
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;
+            background:var(--gray-50);padding:2rem;">
+  <div class="auth-form-inner fade-in-up" style="max-width:420px;width:100%">
 
-        <h4 class="mb-3 text-center">Verify OTP</h4>
-
-        <form method="POST">
-            {% csrf_token %}
-
-            <div class="mb-3">
-                <label class="form-label">Enter OTP</label>
-                <input type="text" name="otp" class="form-control" required>
-            </div>
-
-            <button type="submit" class="btn btn-primary w-100">
-                Verify
-            </button>
-        </form>
-
+    <div style="text-align:center;margin-bottom:2rem">
+      <div style="width:64px;height:64px;background:var(--brand-50);border-radius:50%;
+                  display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;
+                  font-size:1.8rem;">
+        📧
+      </div>
+      <div class="auth-title" style="font-size:1.75rem">Verify Your Email</div>
+      <div class="auth-subtitle">
+        We've sent a 6-digit OTP to your email address.<br>
+        It expires in 5 minutes.
+      </div>
     </div>
-</div>
 
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }}">
+        {% if message.tags == 'error' or message.tags == 'danger' %}✕{% else %}ℹ{% endif %}
+        {{ message }}
+      </div>
+    {% endfor %}
+
+    <div class="card">
+      <div class="card-body">
+        <form method="post" action="{% url 'verify_otp' %}">
+          {% csrf_token %}
+
+          <div class="form-group">
+            <label class="form-label" for="otp">Enter OTP</label>
+            <input class="form-control otp-input" type="text" id="otp" name="otp"
+                   maxlength="6" minlength="6" pattern="[0-9]{6}"
+                   placeholder="• • • • • •" autocomplete="one-time-code" required autofocus>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-full btn-lg">
+            Verify OTP
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-top:1.5rem;font-size:.85rem;color:var(--gray-500)">
+      Didn't receive the OTP?
+      <a href="{% url 'signup' %}" style="color:var(--brand-600);font-weight:600;text-decoration:none">
+        Register again
+      </a>
+    </div>
+
+  </div>
+</div>
 {% endblock %}

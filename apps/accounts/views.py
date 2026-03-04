@@ -1,251 +1,235 @@
+"""
+Account management views: signup (student/teacher), login, OTP, CSV import.
+"""
+
 import csv
 from io import TextIOWrapper
-import random
 
-from django.shortcuts import render, redirect
+from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login
 from django.contrib.auth import get_user_model
-from django.db import transaction
+from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
-from django.conf import settings
+from django.db import transaction
+from django.shortcuts import render, redirect
 
-from apps.accounts.models import CustomUser, StudentProfile, Role, OTP
+from apps.accounts.models import CustomUser, StudentProfile, TeacherProfile, Role, OTP
 from apps.academics.models import Department, Section
 from apps.faculty.models import TeacherMaster
 
-
 User = get_user_model()
 
-REQUIRED_HEADERS = {"username", "password", "roll_number"}
+REQUIRED_CSV_HEADERS = {"username", "password", "roll_number", "admission_number", "enrollment_number"}
 
 
-# ======================================================
-# IMPORT STUDENTS CSV
-# ======================================================
-@login_required
-def import_students_csv(request):
-    if request.method == "POST":
-        csv_file = request.FILES.get("csv_file")
-        section_id = request.POST.get("section")
-
-        if not csv_file:
-            messages.error(request, "Please upload a CSV file.")
-            return redirect("import_students")
-
-        if not csv_file.name.endswith(".csv"):
-            messages.error(request, "Invalid file type.")
-            return redirect("import_students")
-
-        section = Section.objects.filter(id=section_id).first()
-        if not section:
-            messages.error(request, "Invalid section selected.")
-            return redirect("import_students")
-
-        decoded_file = TextIOWrapper(csv_file.file, encoding="utf-8")
-        reader = csv.DictReader(decoded_file)
-
-        headers = {h.strip().lower() for h in reader.fieldnames}
-
-        if not REQUIRED_HEADERS.issubset(headers):
-            messages.error(
-                request,
-                "CSV must contain: username, password, roll_number"
-            )
-            return redirect("import_students")
-
-        created_count = 0
-
-        try:
-            with transaction.atomic():
-                for row in reader:
-                    username = row.get("username", "").strip().lower()
-                    password = row.get("password", "").strip()
-                    roll = row.get("roll_number", "").strip()
-
-                    if not username or not password or not roll:
-                        continue
-
-                    if User.objects.filter(username=username).exists():
-                        continue
-
-                    user = User.objects.create_user(
-                        username=username,
-                        password=password,
-                        role=Role.STUDENT,
-                        is_verified=True,
-                        is_approved=True,
-                        is_active=True
-                    )
-
-                    StudentProfile.objects.create(
-                        user=user,
-                        section=section,
-                        roll_number=roll
-                    )
-
-                    created_count += 1
-
-            messages.success(request, f"{created_count} students imported.")
-        except Exception as e:
-            messages.error(request, f"Import failed: {str(e)}")
-
-        return redirect("import_students")
-
-    departments = Department.objects.all()
-    return render(request, "accounts/import_students.html", {"departments": departments})
-
-
-# ======================================================
+# ──────────────────────────────────────────────────────────────────────────────
 # SIGNUP
-# ======================================================
+# ──────────────────────────────────────────────────────────────────────────────
+
 def signup_view(request):
+    if request.user.is_authenticated:
+        return redirect("dashboard")
+
     if request.method == "POST":
+        first_name        = request.POST.get("first_name", "").strip()
+        last_name         = request.POST.get("last_name", "").strip()
+        role              = request.POST.get("role", "").strip()
+        username          = request.POST.get("username", "").strip().lower()
+        mobile            = request.POST.get("mobile", "").strip()
+        email             = request.POST.get("email", "").strip().lower()
+        password          = request.POST.get("password", "")
+        # Student-only
+        admission_number  = request.POST.get("admission_number", "").strip()
+        enrollment_number = request.POST.get("enrollment_number", "").strip()
 
-        first_name = request.POST.get("first_name")
-        last_name = request.POST.get("last_name")
-        role = request.POST.get("role")
-        username = request.POST.get("username", "").strip()
-        mobile = request.POST.get("mobile", "").strip()
-        email = request.POST.get("email", "").strip()
-        password = request.POST.get("password")
+        # ── Basic validation ──────────────────────────────────────────────────
+        base_fields = [first_name, last_name, role, username, mobile, email, password]
+        if not all(base_fields):
+            messages.error(request, "All fields are required.")
+            return render(request, "accounts/signup.html", {"post": request.POST})
 
-        # Duplicate checks
-        existing_user = User.objects.filter(mobile_number=mobile).first()
+        if role == Role.STUDENT and not (admission_number and enrollment_number):
+            messages.error(request, "Admission number and enrollment number are required.")
+            return render(request, "accounts/signup.html", {"post": request.POST})
 
-        if existing_user:
-            if not existing_user.is_verified:
-                existing_user.delete()
-            else:
-                messages.error(request, "Mobile already registered.")
-                return redirect("signup")
+        # ── Clean stale unverified accounts ──────────────────────────────────
+        User.objects.filter(mobile_number=mobile, is_verified=False).delete()
+        User.objects.filter(email=email, is_verified=False).delete()
 
-        existing_email_user = User.objects.filter(email=email).first()
+        if User.objects.filter(mobile_number=mobile).exists():
+            messages.error(request, "Mobile number already registered.")
+            return render(request, "accounts/signup.html", {"post": request.POST})
 
-        if existing_email_user:
-            if not existing_email_user.is_verified:
-                existing_email_user.delete()
-            else:
-                messages.error(request, "Email already registered.")
-                return redirect("signup")
+        if User.objects.filter(email=email).exists():
+            messages.error(request, "Email already registered.")
+            return render(request, "accounts/signup.html", {"post": request.POST})
 
-        # -------------------------
-        # TEACHER SIGNUP
-        # -------------------------
+        # ── Role-specific checks ──────────────────────────────────────────────
+        teacher_master = None
         if role == Role.TEACHER:
-
-            teacher = TeacherMaster.objects.filter(
-                teacher_code=username,
-                is_registered=False
+            teacher_master = TeacherMaster.objects.filter(
+                teacher_code=username, is_registered=False
             ).first()
+            if not teacher_master:
+                messages.error(request, "Invalid or already-used teacher code.")
+                return render(request, "accounts/signup.html", {"post": request.POST})
 
-            if not teacher:
-                messages.error(request, "Invalid or used teacher code.")
-                return redirect("signup")
-
-            user = User.objects.create_user(
-                username=username,
-                password=password,
-                first_name=first_name,
-                last_name=last_name,
-                mobile_number=mobile,
-                email=email,
-                role=Role.TEACHER,
-                is_active=False,
-                is_verified=False,
-                is_approved=False
-            )
-
-            teacher.is_registered = True
-            teacher.save()
-
-        # -------------------------
-        # STUDENT SIGNUP
-        # -------------------------
         elif role == Role.STUDENT:
-
-            user = User.objects.create_user(
-                username=username.lower(),
-                password=password,
-                first_name=first_name,
-                last_name=last_name,
-                mobile_number=mobile,
-                email=email,
-                role=Role.STUDENT,
-                is_active=False,
-                is_verified=False,
-                is_approved=False
-            )
+            # Check uniqueness of admission/enrollment numbers
+            if StudentProfile.objects.filter(admission_number=admission_number).exists():
+                messages.error(request, "Admission number already registered.")
+                return render(request, "accounts/signup.html", {"post": request.POST})
+            if StudentProfile.objects.filter(enrollment_number=enrollment_number).exists():
+                messages.error(request, "Enrollment number already registered.")
+                return render(request, "accounts/signup.html", {"post": request.POST})
 
         else:
             messages.error(request, "Invalid role selected.")
-            return redirect("signup")
+            return render(request, "accounts/signup.html", {"post": request.POST})
 
-        # -------------------------
-        # OTP GENERATION
-        # -------------------------
-        otp_code = OTP.generate_otp()
+        # ── Create user ───────────────────────────────────────────────────────
+        try:
+            with transaction.atomic():
+                user = User.objects.create_user(
+                    username=username,
+                    password=password,
+                    first_name=first_name,
+                    last_name=last_name,
+                    mobile_number=mobile,
+                    email=email,
+                    role=role,
+                    is_active=False,
+                    is_verified=False,
+                    is_approved=False,
+                )
 
-        OTP.objects.create(
-            user=user,
-            code=otp_code
-        )
+                if role == Role.TEACHER:
+                    teacher_master.is_registered = True
+                    teacher_master.save()
+                    TeacherProfile.objects.create(
+                        user=user,
+                        employee_id=username,
+                    )
 
-        send_mail(
-            "Your ERP OTP",
-            f"Your OTP is {otp_code}",
-            settings.EMAIL_HOST_USER,
-            [email],
-            fail_silently=False,
-        )
+                # Student profile is completed after admin assigns a section.
+                # We store admission/enrollment numbers on the session for now,
+                # and attach them during the admin approval / profile-setup flow.
+                if role == Role.STUDENT:
+                    # Store in session until admin approves & assigns section
+                    request.session["pending_admission"]  = admission_number
+                    request.session["pending_enrollment"] = enrollment_number
 
-        request.session["user_id"] = user.id
+                otp_code = OTP.generate_otp()
+                OTP.objects.create(user=user, code=otp_code)
 
-        return redirect("verify_otp")
+                send_mail(
+                    subject="Your College ERP Verification OTP",
+                    message=(
+                        f"Hello {first_name},\n\n"
+                        f"Your OTP for College ERP is: {otp_code}\n\n"
+                        "This OTP expires in 5 minutes.\n\n"
+                        "If you did not register, please ignore this email."
+                    ),
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[email],
+                    fail_silently=False,
+                )
+
+                request.session["pending_user_id"] = user.id
+                messages.success(request, "OTP sent to your email.")
+                return redirect("verify_otp")
+
+        except Exception as exc:
+            messages.error(request, f"Registration failed: {exc}")
+            return render(request, "accounts/signup.html", {"post": request.POST})
 
     return render(request, "accounts/signup.html")
 
 
-# ======================================================
-# LOGIN
-# ======================================================
-def login_view(request):
+# ──────────────────────────────────────────────────────────────────────────────
+# VERIFY OTP
+# ──────────────────────────────────────────────────────────────────────────────
+
+def verify_otp_view(request):
+    user_id = request.session.get("pending_user_id")
+    if not user_id:
+        messages.error(request, "Session expired. Please register again.")
+        return redirect("signup")
+
     if request.method == "POST":
+        entered = request.POST.get("otp", "").strip()
 
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            messages.error(request, "User not found.")
+            return redirect("signup")
+
+        otp_obj = OTP.objects.filter(user=user).order_by("-created_at").first()
+
+        if not otp_obj:
+            messages.error(request, "OTP not found. Please register again.")
+            return redirect("signup")
+
+        if otp_obj.is_expired():
+            messages.error(request, "OTP expired. Please register again.")
+            return redirect("signup")
+
+        if otp_obj.code != entered:
+            messages.error(request, "Incorrect OTP. Please try again.")
+            return render(request, "accounts/verify_otp.html")
+
+        user.is_verified = True
+        user.is_active   = True
+        user.save()
+
+        del request.session["pending_user_id"]
+        messages.success(request, "Email verified! Your account is pending admin approval.")
+        return redirect("login")
+
+    return render(request, "accounts/verify_otp.html")
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# LOGIN
+# ──────────────────────────────────────────────────────────────────────────────
+
+def login_view(request):
+    if request.user.is_authenticated:
+        return redirect("dashboard")
+
+    if request.method == "POST":
         identifier = request.POST.get("identifier", "").strip()
-        password = request.POST.get("password")
+        password   = request.POST.get("password", "")
 
-        username = None
-
-        # Mobile login
+        username = identifier
         if identifier.isdigit() and len(identifier) == 10:
             user_obj = User.objects.filter(mobile_number=identifier).first()
             if user_obj:
                 username = user_obj.username
-        else:
-            username = identifier
-
-        if not username:
-            messages.error(request, "Invalid credentials.")
-            return redirect("login")
+            else:
+                messages.error(request, "No account with that mobile number.")
+                return render(request, "accounts/login.html")
 
         user = authenticate(request, username=username, password=password)
 
         if not user:
             messages.error(request, "Invalid credentials.")
-            return redirect("login")
+            return render(request, "accounts/login.html")
 
-        # Skip OTP + approval for superuser
         if not user.is_superuser:
-
             if not user.is_verified:
-                messages.error(request, "Please verify OTP first.")
-                return redirect("login")
+                request.session["pending_user_id"] = user.id
+                messages.warning(request, "Please verify your email first.")
+                return redirect("verify_otp")
 
             if not user.is_approved:
-                messages.error(request, "Awaiting ERP approval.")
-                return redirect("login")
+                messages.warning(
+                    request,
+                    "Your account is pending approval from the ERP Manager."
+                )
+                return render(request, "accounts/login.html")
 
         login(request, user)
         return redirect("dashboard")
@@ -253,38 +237,82 @@ def login_view(request):
     return render(request, "accounts/login.html")
 
 
-# ======================================================
-# VERIFY OTP
-# ======================================================
-def verify_otp(request):
+# ──────────────────────────────────────────────────────────────────────────────
+# IMPORT STUDENTS CSV  (ERP Manager only)
+# ──────────────────────────────────────────────────────────────────────────────
+
+@login_required
+def import_students_csv(request):
+    if not (request.user.is_erp_manager):
+        messages.error(request, "Access denied.")
+        return redirect("dashboard")
+
     if request.method == "POST":
+        csv_file   = request.FILES.get("csv_file")
+        section_id = request.POST.get("section")
 
-        entered_otp = request.POST.get("otp")
-        user_id = request.session.get("user_id")
+        if not csv_file:
+            messages.error(request, "Please upload a CSV file.")
+            return redirect("import_students")
 
-        if not user_id:
-            messages.error(request, "Session expired.")
-            return redirect("signup")
+        if not csv_file.name.endswith(".csv"):
+            messages.error(request, "Only CSV files are accepted.")
+            return redirect("import_students")
 
-        user = User.objects.get(id=user_id)
-        otp_obj = OTP.objects.filter(user=user).last()
+        section = Section.objects.filter(id=section_id).first()
+        if not section:
+            messages.error(request, "Invalid section selected.")
+            return redirect("import_students")
 
-        if not otp_obj:
-            messages.error(request, "OTP not found.")
-            return redirect("signup")
+        decoded = TextIOWrapper(csv_file.file, encoding="utf-8")
+        reader  = csv.DictReader(decoded)
+        headers = {h.strip().lower() for h in (reader.fieldnames or [])}
 
-        if otp_obj.is_expired():
-            messages.error(request, "OTP expired.")
-            return redirect("signup")
+        if not REQUIRED_CSV_HEADERS.issubset(headers):
+            messages.error(
+                request,
+                f"CSV must contain: {', '.join(REQUIRED_CSV_HEADERS)}"
+            )
+            return redirect("import_students")
 
-        if otp_obj.code == entered_otp:
-            user.is_verified = True
-            user.is_active = True
-            user.save()
+        created = skipped = 0
+        try:
+            with transaction.atomic():
+                for row in reader:
+                    uname = row.get("username", "").strip().lower()
+                    pwd   = row.get("password", "").strip()
+                    roll  = row.get("roll_number", "").strip()
+                    adm   = row.get("admission_number", "").strip()
+                    enr   = row.get("enrollment_number", "").strip()
 
-            messages.success(request, "Email verified. Wait for approval.")
-            return redirect("login")
+                    if not all([uname, pwd, roll, adm, enr]):
+                        skipped += 1
+                        continue
 
-        messages.error(request, "Invalid OTP.")
+                    if User.objects.filter(username=uname).exists():
+                        skipped += 1
+                        continue
 
-    return render(request, "accounts/verify_otp.html")
+                    u = User.objects.create_user(
+                        username=uname, password=pwd,
+                        role=Role.STUDENT,
+                        is_verified=True, is_approved=True, is_active=True,
+                    )
+                    StudentProfile.objects.create(
+                        user=u, section=section,
+                        roll_number=roll,
+                        admission_number=adm,
+                        enrollment_number=enr,
+                    )
+                    created += 1
+
+            messages.success(request, f"Import complete: {created} created, {skipped} skipped.")
+        except Exception as exc:
+            messages.error(request, f"Import failed: {exc}")
+
+        return redirect("import_students")
+
+    departments = Department.objects.prefetch_related(
+        "programs__courses__classes__sections"
+    )
+    return render(request, "accounts/import_students.html", {"departments": departments})

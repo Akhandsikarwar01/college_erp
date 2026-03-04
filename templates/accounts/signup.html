@@ -1,40 +1,129 @@
-<h2>Signup</h2>
+{% extends "base.html" %}
+{% load static %}
+{% block outer_content %}
+<div class="auth-wrapper">
+  <div class="auth-brand-panel">
+    <div class="auth-brand-logo">College ERP</div>
+    <div class="auth-brand-tagline">Unified platform for students, teachers, and administrators.</div>
+    <div class="auth-brand-illustration">
+      <div class="auth-stat-pill">✅ OTP Verified</div>
+      <div class="auth-stat-pill">🔒 Role-based Access</div>
+      <div class="auth-stat-pill">📱 QR Attendance</div>
+    </div>
+  </div>
 
-<form method="post">
-    {% csrf_token %}
+  <div class="auth-form-panel" style="overflow-y:auto;padding:2rem">
+    <div class="auth-form-inner fade-in-up">
+      <div class="auth-title">Create Account</div>
+      <div class="auth-subtitle">Register for College ERP access</div>
 
-    <label>Role:</label>
-    <select name="role">
-        <option value="STUDENT">Student</option>
-        <option value="TEACHER">Teacher</option>
-    </select>
-    <br><br>
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+          {% if message.tags == 'error' or message.tags == 'danger' %}✕{% else %}ℹ{% endif %}
+          {{ message }}
+        </div>
+      {% endfor %}
 
-    <input type="text" name="first_name" placeholder="First Name" required>
-    <br><br>
+      <form method="post" action="{% url 'signup' %}">
+        {% csrf_token %}
 
-    <input type="text" name="last_name" placeholder="Last Name" required>
-    <br><br>
+        <div class="form-group">
+          <label class="form-label">I am a</label>
+          <select class="form-control form-select" name="role" id="roleSelect" required>
+            <option value="">— Select Role —</option>
+            <option value="STUDENT" {% if post.role == "STUDENT" %}selected{% endif %}>Student</option>
+            <option value="TEACHER" {% if post.role == "TEACHER" %}selected{% endif %}>Teacher</option>
+          </select>
+        </div>
 
-    <label>Admission No / Teacher Code:</label>
-    <input type="text" name="username" required>
-    <br><br>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
+          <div class="form-group">
+            <label class="form-label">First Name</label>
+            <input class="form-control" type="text" name="first_name" placeholder="John" required value="{{ post.first_name|default:'' }}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Last Name</label>
+            <input class="form-control" type="text" name="last_name" placeholder="Doe" required value="{{ post.last_name|default:'' }}">
+          </div>
+        </div>
 
-    <label>Mobile:</label>
-    <input type="text" name="mobile" required>
-    <br><br>
+        <div class="form-group">
+          <label class="form-label" id="usernameLabel">Admission No / Teacher Code</label>
+          <input class="form-control" type="text" name="username" id="usernameInput"
+                 placeholder="e.g. CS2024001" required value="{{ post.username|default:'' }}">
+          <div class="text-sm text-muted mt-1" id="usernameHint">
+            Students: admission number &nbsp;|&nbsp; Teachers: employee/teacher code
+          </div>
+        </div>
 
-    <label>Email:</label>
-    <input type="email" name="email" required>
-    <br><br>
+        <!-- Student-only fields -->
+        <div id="studentFields">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
+            <div class="form-group">
+              <label class="form-label">Admission Number</label>
+              <input class="form-control" type="text" name="admission_number"
+                     placeholder="e.g. ADM/2024/001" value="{{ post.admission_number|default:'' }}">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Enrollment Number</label>
+              <input class="form-control" type="text" name="enrollment_number"
+                     placeholder="e.g. ENR/CS/2024/001" value="{{ post.enrollment_number|default:'' }}">
+            </div>
+          </div>
+        </div>
 
-    <label>Password:</label>
-    <input type="password" name="password" required>
-    <br><br>
+        <div class="form-group">
+          <label class="form-label">Mobile Number</label>
+          <input class="form-control" type="tel" name="mobile" placeholder="10-digit number"
+                 maxlength="10" pattern="[0-9]{10}" required value="{{ post.mobile|default:'' }}">
+        </div>
 
-    <button type="submit">Register</button>
-</form>
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <input class="form-control" type="email" name="email" placeholder="you@example.com"
+                 required value="{{ post.email|default:'' }}">
+          <div class="text-sm text-muted mt-1">OTP will be sent here</div>
+        </div>
 
-{% for message in messages %}
-<p>{{ message }}</p>
-{% endfor %}
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input class="form-control" type="password" name="password" placeholder="Minimum 8 characters" minlength="8" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-full btn-lg">Register & Send OTP</button>
+      </form>
+
+      <div class="divider"></div>
+      <div style="text-align:center;font-size:.88rem;color:var(--gray-500)">
+        Already have an account?
+        <a href="{% url 'login' %}" style="color:var(--brand-600);font-weight:600;text-decoration:none">Sign in</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const roleSelect = document.getElementById('roleSelect');
+  const studentFields = document.getElementById('studentFields');
+  const usernameLabel = document.getElementById('usernameLabel');
+  const usernameHint  = document.getElementById('usernameHint');
+  const usernameInput = document.getElementById('usernameInput');
+
+  function updateForRole() {
+    if (roleSelect.value === 'TEACHER') {
+      studentFields.style.display = 'none';
+      usernameLabel.textContent = 'Teacher Code';
+      usernameHint.textContent  = 'Enter the teacher code issued by the institution';
+      usernameInput.placeholder = 'e.g. TCH2024001';
+    } else {
+      studentFields.style.display = 'block';
+      usernameLabel.textContent = 'Admission Number';
+      usernameHint.textContent  = 'Your enrollment / admission number (used as login username)';
+      usernameInput.placeholder = 'e.g. CS2024001';
+    }
+  }
+
+  roleSelect.addEventListener('change', updateForRole);
+  updateForRole(); // init
+</script>
+{% endblock %}
