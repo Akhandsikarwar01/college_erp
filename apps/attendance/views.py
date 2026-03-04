@@ -155,7 +155,7 @@ def qr_display(request, session_id):
 
     # Pass initial token so page renders immediately
     initial_token = current_qr_token(session.pk)
-    initial_payload = json.dumps({"session_id": session.pk, "token": initial_token})
+    initial_payload = {"session_id": session.pk, "token": initial_token}
 
     return render(request, "attendance/qr_display.html", {
         "session":         session,
@@ -187,9 +187,8 @@ def get_qr_token(request, session_id):
     token = current_qr_token(session.pk)
     payload = json.dumps({"session_id": session.pk, "token": token})
 
-    # Time remaining until this token expires
-    window      = int(time.time() / 5)
-    expires_in  = 5 - (int(time.time()) % 5)
+    # Time remaining until this token expires (in seconds)
+    expires_in  = 5 - (time.time() % 5)
 
     # Live present count
     present_count = session.records.filter(is_present=True).count()

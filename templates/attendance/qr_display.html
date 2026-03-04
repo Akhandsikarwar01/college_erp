@@ -118,8 +118,9 @@ let   lastPayload = null;
 
 // Draw initial QR
 const initPayload = {{ initial_payload|safe }};
-renderQR(JSON.stringify(initPayload));
-lastPayload = JSON.stringify(initPayload);
+const initialPayloadStr = JSON.stringify(initPayload);
+renderQR(initialPayloadStr);
+lastPayload = initialPayloadStr;
 
 function renderQR(str) {
   const box   = document.getElementById("qrcode");

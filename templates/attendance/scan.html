@@ -132,7 +132,7 @@ function loop() {
     cnv.width=vid.videoWidth; cnv.height=vid.videoHeight;
     ctx.drawImage(vid,0,0);
     const img=ctx.getImageData(0,0,cnv.width,cnv.height);
-    const code=jsQR(img.data,img.width,img.height,{inversionAttempts:"dontInvert"});
+    const code=jsQR(img.data,img.width,img.height);
     if (code) { paused=true; setStatus("scanning","⏳ Verifying…"); submit(code.data); return; }
   }
   raf=requestAnimationFrame(loop);
