@@ -30,9 +30,9 @@
             {% for fee in fees %}
             <div class="fee-item">
                 <strong>{{ fee.fee_type.name }}</strong><br>
-                Amount: ₹{{ fee.amount|floatformat:2 }}<br>
+                Amount: ₹{{ fee.total_amount|floatformat:2 }}<br>
                 Paid: ₹{{ fee.paid_amount|floatformat:2 }}<br>
-                Pending: ₹{{ fee.pending_amount|floatformat:2 }}
+                Pending: ₹{{ fee.balance|floatformat:2 }}
             </div>
             {% endfor %}
             

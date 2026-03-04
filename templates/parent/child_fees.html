@@ -84,7 +84,7 @@
                   <td>{{ fee.fee_type.name }}</td>
                   <td class="text-end">₹{{ fee.total_amount|floatformat:0 }}</td>
                   <td class="text-end">₹{{ fee.paid_amount|floatformat:0 }}</td>
-                  <td class="text-end text-danger">₹{{ fee.total_amount|add:fee.paid_amount|floatformat:0 }}</td>
+                  <td class="text-end text-danger">₹{{ fee.balance|floatformat:0 }}</td>
                   <td>
                     {% if fee.paid_amount >= fee.total_amount %}
                       <span class="badge bg-success">Paid</span>
@@ -127,9 +127,9 @@
                 <tr>
                   <td><small>{{ payment.payment_date|date:"d M Y" }}</small></td>
                   <td class="text-success"><strong>₹{{ payment.amount|floatformat:0 }}</strong></td>
-                  <td><small>{{ payment.payment_method|default:"-" }}</small></td>
+                  <td><small>{{ payment.get_method_display|default:"-" }}</small></td>
                   <td>
-                    <small class="text-muted">{{ payment.transaction_id|default:"-" }}</small>
+                    <small class="text-muted">{{ payment.receipt_number|default:"-" }}</small>
                   </td>
                 </tr>
               {% endfor %}

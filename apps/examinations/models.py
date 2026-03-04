@@ -7,6 +7,7 @@ GradeScale — configurable grading system
 """
 
 from django.db import models
+from django.core.exceptions import ValidationError
 from apps.core.models import TimeStampedModel
 from apps.academics.models import Course, Semester, Subject, Section
 from apps.accounts.models import StudentProfile
@@ -43,6 +44,22 @@ class Exam(TimeStampedModel):
         ordering = ["-start_date"]
         unique_together = ("exam_type", "course", "semester", "start_date")
 
+    def clean(self):
+        """Validate exam date range and course-semester relationship."""
+        if self.start_date and self.end_date and self.end_date < self.start_date:
+            raise ValidationError({"end_date": "Exam end date must be after start date."})
+        
+        # Validate that semester belongs to course
+        if self.semester and self.course and self.semester.course != self.course:
+            raise ValidationError({
+                "semester": f"Semester {self.semester.number} belongs to course {self.semester.course.name}, "
+                           f"but exam is for course {self.course.name}. They must match."
+            })
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.name} ({self.exam_type.name})"
 
@@ -65,6 +82,39 @@ class ExamSchedule(TimeStampedModel):
     class Meta:
         ordering = ["date", "start_time"]
         unique_together = ("exam", "subject")
+
+    def clean(self):
+        """Validate exam schedule constraints."""
+        # Validate time range
+        if self.start_time and self.end_time and self.start_time >= self.end_time:
+            raise ValidationError({"end_time": "Exam end time must be after start time."})
+        
+        # Validate date is within exam period
+        if self.exam and self.date:
+            if self.date < self.exam.start_date:
+                raise ValidationError({
+                    "date": f"Exam schedule date ({self.date}) cannot be before exam start date ({self.exam.start_date})."
+                })
+            if self.date > self.exam.end_date:
+                raise ValidationError({
+                    "date": f"Exam schedule date ({self.date}) cannot be after exam end date ({self.exam.end_date})."
+                })
+        
+        # Validate subject belongs to exam's semester
+        if self.exam and self.subject:
+            if self.subject.semester != self.exam.semester:
+                raise ValidationError({
+                    "subject": f"Subject {self.subject.name} is from semester {self.subject.semester.number}, "
+                              f"but exam is for semester {self.exam.semester.number}. They must match."
+                })
+        
+        # Validate passing marks
+        if self.passing_marks > self.max_marks:
+            raise ValidationError({"passing_marks": "Passing marks cannot exceed maximum marks."})
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.subject.name} — {self.date}"

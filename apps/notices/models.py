@@ -8,6 +8,7 @@ Event — events with date and venue
 
 from django.db import models
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from apps.core.models import TimeStampedModel
 
 
@@ -63,6 +64,15 @@ class Event(TimeStampedModel):
 
     class Meta:
         ordering = ["-date"]
+
+    def clean(self):
+        """Validate event date range."""
+        if self.end_date and self.date and self.end_date < self.date:
+            raise ValidationError({"end_date": "Event end date must be after start date."})
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.title} ({self.date})"

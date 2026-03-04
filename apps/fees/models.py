@@ -106,11 +106,11 @@ class Payment(TimeStampedModel):
         if not self.receipt_number:
             self.receipt_number = f"RCP-{uuid.uuid4().hex[:8].upper()}"
         super().save(*args, **kwargs)
-        # Update parent StudentFee
+        # Update parent StudentFee using efficient aggregate
+        from django.db.models import Sum
         fee = self.student_fee
-        fee.paid_amount = sum(
-            p.amount for p in fee.payments.all()
-        )
+        total_paid = fee.payments.aggregate(Sum('amount'))['amount__sum'] or 0
+        fee.paid_amount = total_paid
         fee.is_paid = fee.paid_amount >= fee.total_amount
         fee.save(update_fields=["paid_amount", "is_paid"])
 
