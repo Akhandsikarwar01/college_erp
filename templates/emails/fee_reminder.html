@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 5px 5px 0 0; }
+        .content { background: #f9f9f9; padding: 20px; border-radius: 0 0 5px 5px; }
+        .alert-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 15px 0; border-radius: 3px; }
+        .fee-item { background: white; padding: 10px; margin: 10px 0; border-left: 3px solid #667eea; }
+        .button { display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin-top: 15px; }
+        .footer { text-align: center; color: #999; font-size: 12px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Fee Payment Reminder</h2>
+        </div>
+        <div class="content">
+            <p>Dear {{ parent_name }},</p>
+            
+            <p>We hope you and {{ student_name }} are doing well! This is a friendly reminder about pending fee payments in your student's account.</p>
+            
+            <div class="alert-box">
+                <strong>💰 Total Pending Amount: ₹{{ total_pending|floatformat:2 }}</strong>
+            </div>
+            
+            <h3>Fee Details:</h3>
+            {% for fee in fees %}
+            <div class="fee-item">
+                <strong>{{ fee.fee_type.name }}</strong><br>
+                Amount: ₹{{ fee.amount|floatformat:2 }}<br>
+                Paid: ₹{{ fee.paid_amount|floatformat:2 }}<br>
+                Pending: ₹{{ fee.pending_amount|floatformat:2 }}
+            </div>
+            {% endfor %}
+            
+            <p>Please pay the pending amount at your earliest convenience to avoid any late fees.</p>
+            
+            <a href="{{ portal_url }}" class="button">View Fee Details in Parent Portal</a>
+            
+            <p style="margin-top: 20px;">If you have already made the payment, please disregard this notice. Our records will be updated shortly.</p>
+            
+            <p>Best regards,<br>{{ school_name }} - Administration</p>
+        </div>
+        <div class="footer">
+            <p>This is an automated email. Please do not reply to this message.</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Examinations{% endblock %}
+{% block topbar_title %}Examinations{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in-up">
+  <div>
+    <div class="page-header-title">Examinations</div>
+    <div class="page-header-subtitle">Manage exams and view results</div>
+  </div>
+  {% if request.user.is_erp_manager %}
+  <a href="{% url 'create_exam' %}" class="btn btn-primary">+ Create Exam</a>
+  {% endif %}
+</div>
+
+{% if exams %}
+<div class="table-wrapper fade-in-up">
+  <table class="erp-table">
+    <thead>
+      <tr>
+        <th>Exam Name</th>
+        <th>Type</th>
+        <th>Course</th>
+        <th>Semester</th>
+        <th>Duration</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for exam in exams %}
+      <tr>
+        <td class="fw-semibold">{{ exam.name }}</td>
+        <td><span class="status-badge open">{{ exam.exam_type.name }}</span></td>
+        <td>{{ exam.course.name }}</td>
+        <td>Sem {{ exam.semester.number }}</td>
+        <td class="text-muted text-sm">{{ exam.start_date|date:"d M" }} – {{ exam.end_date|date:"d M Y" }}</td>
+        <td>
+          {% if exam.is_published %}
+            <span class="status-badge open">Published</span>
+          {% else %}
+            <span class="status-badge pending">Draft</span>
+          {% endif %}
+        </td>
+        <td>
+          <a href="{% url 'exam_detail' exam.pk %}" class="btn btn-sm btn-outline">View →</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="alert alert-info fade-in-up">📝 No examinations found.</div>
+{% endif %}
+{% endblock %}

@@ -50,3 +50,31 @@ class TeacherMaster(models.Model):
 
     def __str__(self):
         return f"{self.full_name} ({self.teacher_code})"
+
+
+class SectionIncharge(TimeStampedModel):
+    section = models.OneToOneField(
+        Section,
+        on_delete=models.CASCADE,
+        related_name="section_incharge_assignment"
+    )
+    teacher = models.ForeignKey(
+        TeacherProfile,
+        on_delete=models.CASCADE,
+        related_name="section_incharge_sections"
+    )
+    assigned_by = models.ForeignKey(
+        "accounts.CustomUser",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="assigned_section_incharges"
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["section"], name="unique_incharge_per_section")
+        ]
+
+    def __str__(self):
+        return f"{self.section} → {self.teacher.user.full_name}"

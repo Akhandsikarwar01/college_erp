@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Generate Fees{% endblock %}
+{% block topbar_title %}Generate Fees{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in-up">
+    <div>
+        <div class="page-header-title">Generate Student Fees</div>
+        <div class="page-header-subtitle">Create fee records for all students in a course/semester</div>
+    </div>
+</div>
+
+<div class="card fade-in-up" style="max-width:500px">
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label">Course</label>
+                <select name="course" class="form-control form-select" required>
+                    <option value="">Select course…</option>
+                    {% for c in courses %}<option value="{{ c.pk }}">{{ c.name }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Semester</label>
+                <select name="semester" class="form-control form-select" required>
+                    <option value="">Select semester…</option>
+                    {% for s in semesters %}<option value="{{ s.pk }}">Sem {{ s.number }} – {{ s.course.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Due Date</label>
+                <input type="date" name="due_date" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-full">Generate Fees</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

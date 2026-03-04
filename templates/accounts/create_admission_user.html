@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Create Admission User{% endblock %}
+{% block topbar_title %}Create Admission User{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in-up">
+  <div>
+    <div class="page-header-title">Create Admission Team User</div>
+    <div class="page-header-subtitle">ERP Manager only</div>
+  </div>
+</div>
+
+<form method="post" class="card fade-in-up">
+  {% csrf_token %}
+  <div class="card-body" style="display:grid;grid-template-columns:repeat(2,minmax(240px,1fr));gap:1rem;">
+    <input class="form-control" name="first_name" placeholder="First Name" required>
+    <input class="form-control" name="last_name" placeholder="Last Name" required>
+    <input class="form-control" name="email" type="email" placeholder="Email" required>
+    <input class="form-control" name="mobile" placeholder="Mobile Number">
+    <input class="form-control" name="username" placeholder="Username" required>
+    <input class="form-control" name="password" placeholder="Password (optional)">
+  </div>
+  <div class="card-footer" style="padding:1rem 1.25rem;">
+    <button type="submit" class="btn btn-primary">Create Admission Team User</button>
+  </div>
+</form>
+{% endblock %}

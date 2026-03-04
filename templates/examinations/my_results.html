@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}My Results{% endblock %}
+{% block topbar_title %}My Results{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in-up">
+    <div>
+        <div class="page-header-title">My Results 📊</div>
+        <div class="page-header-subtitle">{{ profile.user.full_name }} · {{ profile.roll_number }}</div>
+    </div>
+</div>
+
+{% for data in exam_results %}
+<div class="card fade-in-up" style="margin-bottom:1.5rem">
+    <div class="card-header">
+        <div>
+            <div class="card-title">{{ data.exam.name }}</div>
+            <div style="font-size:.8rem;color:var(--gray-500);margin-top:.15rem">{{ data.exam.exam_type.name }} · {{
+                data.exam.start_date|date:"M Y" }}</div>
+        </div>
+        <div style="text-align:right">
+            <div
+                style="font-size:1.5rem;font-weight:700;color:{% if data.percentage >= 60 %}var(--success){% elif data.percentage >= 40 %}var(--warning){% else %}var(--danger){% endif %}">
+                {{ data.percentage }}%</div>
+            <div style="font-size:.75rem;color:var(--gray-500)">{{ data.total_marks|floatformat:0 }} / {{ data.total_max
+                }}</div>
+        </div>
+    </div>
+    <div class="table-wrapper" style="border:none;border-radius:0">
+        <table class="erp-table">
+            <thead>
+                <tr>
+                    <th>Subject</th>
+                    <th>Max Marks</th>
+                    <th>Obtained</th>
+                    <th>Percentage</th>
+                    <th>Grade</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in data.results %}
+                <tr>
+                    <td class="fw-semibold">{{ r.exam_schedule.subject.name }}</td>
+                    <td>{{ r.exam_schedule.max_marks }}</td>
+                    <td>{% if r.is_absent %}—{% else %}{{ r.marks_obtained|floatformat:1 }}{% endif %}</td>
+                    <td>{% if r.is_absent %}—{% else %}{{ r.percentage }}%{% endif %}</td>
+                    <td>
+                        <span
+                            class="status-badge {% if r.is_absent %}locked{% elif r.is_pass %}open{% else %}locked{% endif %}">
+                            {{ r.grade }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if r.is_absent %}
+                        <span class="attendance-badge low">Absent</span>
+                        {% elif r.is_pass %}
+                        <span class="attendance-badge good">Pass</span>
+                        {% else %}
+                        <span class="attendance-badge low">Fail</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% empty %}
+<div class="alert alert-info fade-in-up">📝 No results published yet.</div>
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ child_user.full_name }} - Leave Applications{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="row mb-4">
+    <div class="col-md-8">
+      <h1 class="h2">{{ child_user.full_name }} - Leave Applications 📋</h1>
+      <p class="text-muted">Track leave applications and approval status</p>
+    </div>
+    <div class="col-md-4 text-end">
+      <a href="{% url 'parent_dashboard' %}" class="btn btn-outline-secondary btn-sm">← Back to Dashboard</a>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="card border-0 bg-light">
+        <div class="card-body text-center">
+          <div class="text-muted small mb-1">Total Applications</div>
+          <div style="font-size: 2rem; font-weight: bold; color: #3b82f6;">{{ leaves|length }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-0 bg-light">
+        <div class="card-body text-center">
+          <div class="text-muted small mb-1">Pending</div>
+          <div style="font-size: 2rem; font-weight: bold; color: #f59e0b;">
+            {{ leaves|dictsort:"status"|length }}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-0 bg-light">
+        <div class="card-body text-center">
+          <div class="text-muted small mb-1">Approved</div>
+          <div style="font-size: 2rem; font-weight: bold; color: #10b981;">0</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-0 bg-light">
+        <div class="card-body text-center">
+          <div class="text-muted small mb-1">Rejected</div>
+          <div style="font-size: 2rem; font-weight: bold; color: #ef4444;">0</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leave Applications List -->
+  <div class="card border-0">
+    <div class="card-header bg-white border-bottom">
+      <h5 class="mb-0">All Leave Applications</h5>
+    </div>
+    <div class="card-body">
+      {% if leaves %}
+        <div class="space-y-3">
+          {% for leave in leaves %}
+            <div class="border rounded p-3 mb-3" style="border-color: #e5e7eb;">
+              <div class="row align-items-start">
+                <div class="col-md-6">
+                  <h6 class="mb-1">{{ leave.leave_type.name }}</h6>
+                  <small class="text-muted d-block">
+                    📅 {{ leave.start_date|date:"d M Y" }} – {{ leave.end_date|date:"d M Y" }}
+                  </small>
+                  <small class="text-muted d-block">
+                    📝 {{ leave.reason|truncatewords:10 }}
+                  </small>
+                </div>
+                <div class="col-md-3">
+                  <div class="text-muted small mb-1">Status</div>
+                  <span class="badge" style="background-color: 
+                    {% if leave.status == 'pending' %}#f59e0b
+                    {% elif leave.status == 'approved' %}#10b981
+                    {% elif leave.status == 'rejected' %}#ef4444
+                    {% else %}#6b7280{% endif %};">
+                    {{ leave.get_status_display|upper }}
+                  </span>
+                </div>
+                <div class="col-md-3 text-end">
+                  {% if leave.reviewer %}
+                    <small class="text-muted d-block">Reviewed by:</small>
+                    <small>{{ leave.reviewer.first_name }} {{ leave.reviewer.last_name }}</small>
+                  {% else %}
+                    <small class="text-muted">Pending review</small>
+                  {% endif %}
+                </div>
+              </div>
+
+              {% if leave.reviewer_remarks %}
+                <div class="mt-2 p-2 bg-light rounded border-left" style="border-left: 3px solid #f59e0b;">
+                  <small class="text-muted"><strong>Remarks:</strong> {{ leave.reviewer_remarks }}</small>
+                </div>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="alert alert-info mb-0">
+          <strong>No leave applications found.</strong> Leave applications will appear here once they are submitted.
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Info Box -->
+  <div class="mt-4 p-3 bg-light rounded text-muted small">
+    <strong>📌 Important:</strong> 
+    <ul class="mb-0 mt-1">
+      <li>Leave applications must be submitted in advance</li>
+      <li>Medical certificates may be required for medical leaves</li>
+      <li>Check with your school about leave policies and limits</li>
+      <li>Excessive absences may affect exam eligibility</li>
+    </ul>
+  </div>
+</div>
+{% endblock %}

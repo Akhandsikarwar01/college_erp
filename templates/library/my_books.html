@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}My Books{% endblock %}
+{% block topbar_title %}My Books{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in-up">
+    <div>
+        <div class="page-header-title">My Books 📚</div>
+        <div class="page-header-subtitle">Books you've borrowed</div>
+    </div>
+    <a href="{% url 'book_catalog' %}" class="btn btn-outline">Browse Catalog →</a>
+</div>
+
+{% if issues %}
+<div class="fade-in-up">
+    {% for i in issues %}
+    <div class="attendance-row" {% if i.is_overdue %}style="border-color:var(--danger)" {% endif %}>
+        <div class="attendance-row-header">
+            <div>
+                <div class="attendance-subject">{{ i.book.title }}</div>
+                <div class="attendance-meta">by {{ i.book.author }}</div>
+            </div>
+            <span
+                class="status-badge {% if i.status == 'RETURNED' %}open{% elif i.is_overdue %}locked{% else %}pending{% endif %}">
+                {% if i.status == "RETURNED" %}Returned{% elif i.is_overdue %}Overdue{% else %}Issued{% endif %}
+            </span>
+        </div>
+        <div style="display:flex;gap:2rem;font-size:.85rem;color:var(--gray-500)">
+            <span>Issued: {{ i.issue_date|date:"d M Y" }}</span>
+            <span>Due: {{ i.due_date|date:"d M Y" }}</span>
+            {% if i.return_date %}<span>Returned: {{ i.return_date|date:"d M Y" }}</span>{% endif %}
+            {% if i.fine_amount > 0 %}<span style="color:var(--danger);font-weight:600">Fine: ₹{{ i.fine_amount
+                }}</span>{% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="alert alert-info fade-in-up">📚 You haven't borrowed any books.</div>
+{% endif %}
+{% endblock %}

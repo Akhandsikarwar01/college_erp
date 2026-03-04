@@ -3,97 +3,153 @@
 {% block topbar_title %}My Dashboard{% endblock %}
 
 {% block content %}
-<div class="attendance-hero fade-in-up">
-  <div class="attendance-ring">
-    <svg width="110" height="110" viewBox="0 0 110 110">
-      <circle cx="55" cy="55" r="46" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="10"/>
-      <circle cx="55" cy="55" r="46" fill="none"
-        stroke="{% if overall_percentage >= 75 %}#10b981{% elif overall_percentage >= 60 %}#f59e0b{% else %}#ef4444{% endif %}"
-        stroke-width="10" stroke-linecap="round" stroke-dasharray="289"
-        style="stroke-dashoffset:calc(289px - (289px * {{ overall_percentage }} / 100))"/>
-    </svg>
-    <div class="attendance-ring-label" style="color:#fff">
-      <div class="attendance-ring-pct">{{ overall_percentage }}%</div>
-      <div class="attendance-ring-sub">Overall</div>
-    </div>
+<div class="attendance-hero fade-in-up" style="padding:1.25rem 1.5rem;display:block">
+  <div class="attendance-hero-title">Hello, {{ request.user.first_name }}!</div>
+  <div class="attendance-hero-meta" style="opacity:.95">
+    Student Master Details (ERP)
   </div>
-  <div class="attendance-hero-stats">
-    <div class="attendance-hero-title">Hello, {{ request.user.first_name }}!</div>
-    <div class="attendance-hero-meta">
-      {% if profile %}
-      <div style="opacity:.7;font-size:.82rem;margin-bottom:.5rem">
-        Adm: {{ profile.admission_number }} &nbsp;·&nbsp; Enr: {{ profile.enrollment_number }}
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.65rem;margin-top:1rem;font-size:.83rem">
+    <div class="hero-stat-pill">🎫 Admission: {{ student_details.admission_number }}</div>
+    <div class="hero-stat-pill">📝 Application: {{ student_details.application_number }}</div>
+    <div class="hero-stat-pill">📋 Enrollment: {{ student_details.enrollment_number }}</div>
+    <div class="hero-stat-pill">🏫 Section: {{ student_details.section }}</div>
+    <div class="hero-stat-pill">🆔 Roll: {{ student_details.roll_number }}</div>
+    <div class="hero-stat-pill">👨 Father: {{ student_details.father_name }}</div>
+    <div class="hero-stat-pill">👩 Mother: {{ student_details.mother_name }}</div>
+    <div class="hero-stat-pill">📞 Guardian: {{ student_details.guardian_phone }}</div>
+    <div class="hero-stat-pill">🎂 DOB: {% if student_details.date_of_birth %}{{ student_details.date_of_birth|date:"d M Y" }}{% else %}-{% endif %}</div>
+    <div class="hero-stat-pill">⚥ Gender: {{ student_details.gender }}</div>
+    <div class="hero-stat-pill">🩸 Blood: {{ student_details.blood_group }}</div>
+    <div class="hero-stat-pill">📍 Address: {{ student_details.address }}</div>
+  </div>
+</div>
+
+<!-- ── QUICK ACTIONS ────────────────────────────────────────── -->
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.75rem;margin-bottom:2rem"
+  class="fade-in-up">
+  <a href="{% url 'scan_attendance' %}" class="quick-action-card">
+    <div class="qa-icon">📱</div>
+    <div class="qa-label">Scan QR</div>
+  </a>
+  <a href="{% url 'my_attendance' %}" class="quick-action-card">
+    <div class="qa-icon">✅</div>
+    <div class="qa-label">My Attendance</div>
+  </a>
+  <a href="{% url 'my_results' %}" class="quick-action-card">
+    <div class="qa-icon">📊</div>
+    <div class="qa-label">My Results</div>
+    {% if result_count > 0 %}<div style="font-size:.72rem;color:var(--success);font-weight:600;margin-top:.2rem">{{
+      result_count }} results</div>{% endif %}
+  </a>
+  <a href="{% url 'my_fees' %}" class="quick-action-card">
+    <div class="qa-icon">💰</div>
+    <div class="qa-label">My Fees</div>
+    {% if fee_pending > 0 %}<div style="font-size:.72rem;color:var(--danger);font-weight:600;margin-top:.2rem">₹{{
+      fee_pending|floatformat:0 }} due</div>{% endif %}
+  </a>
+  <a href="{% url 'my_timetable' %}" class="quick-action-card">
+    <div class="qa-icon">📅</div>
+    <div class="qa-label">Timetable</div>
+  </a>
+  <a href="{% url 'notice_list' %}" class="quick-action-card">
+    <div class="qa-icon">📢</div>
+    <div class="qa-label">Notices</div>
+  </a>
+  <a href="{% url 'apply_leave' %}" class="quick-action-card">
+    <div class="qa-icon">🏖</div>
+    <div class="qa-label">Apply Leave</div>
+    {% if leave_stats.pending > 0 %}<div style="font-size:.72rem;color:var(--warning);font-weight:600;margin-top:.2rem">
+      {{ leave_stats.pending }} pending</div>{% endif %}
+  </a>
+  <a href="{% url 'book_catalog' %}" class="quick-action-card">
+    <div class="qa-icon">📚</div>
+    <div class="qa-label">Library</div>
+    {% if books_issued > 0 %}<div style="font-size:.72rem;color:var(--brand-600);font-weight:600;margin-top:.2rem">{{
+      books_issued }} borrowed</div>{% endif %}
+  </a>
+  <a href="{% url 'student_profile' %}" class="quick-action-card">
+    <div class="qa-icon">👤</div>
+    <div class="qa-label">My Profile</div>
+  </a>
+</div>
+
+<!-- ── FEE & EXAM OVERVIEW ──────────────────────────────────── -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem" class="fade-in-up">
+  <!-- Fee Summary -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Fee Status</div>
+      <a href="{% url 'my_fees' %}" class="btn btn-sm btn-outline">Details →</a>
+    </div>
+    <div class="card-body">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;text-align:center">
+        <div>
+          <div style="font-size:1.3rem;font-weight:700">₹{{ fee_total|floatformat:0 }}</div>
+          <div style="font-size:.75rem;color:var(--gray-500)">Total</div>
+        </div>
+        <div>
+          <div style="font-size:1.3rem;font-weight:700;color:var(--success)">₹{{ fee_paid|floatformat:0 }}</div>
+          <div style="font-size:.75rem;color:var(--gray-500)">Paid</div>
+        </div>
+        <div>
+          <div
+            style="font-size:1.3rem;font-weight:700;color:{% if fee_pending > 0 %}var(--danger){% else %}var(--success){% endif %}">
+            ₹{{ fee_pending|floatformat:0 }}</div>
+          <div style="font-size:.75rem;color:var(--gray-500)">Due</div>
+        </div>
+      </div>
+      {% if fee_total > 0 %}
+      <div class="progress-bar-track" style="margin-top:.75rem">
+        <div
+          class="progress-bar-fill {% if fee_paid >= fee_total %}good{% elif fee_paid > 0 %}warning{% else %}low{% endif %}"
+          style="width:{% widthratio fee_paid fee_total 100 %}%"></div>
       </div>
       {% endif %}
-      {% if low_attendance %}⚠️ Attendance below 75% — immediate action required.
-      {% else %}✅ Attendance is in good standing!{% endif %}
     </div>
-    <div class="hero-stat-pills">
-      <div class="hero-stat-pill">📅 {{ total_classes }} Classes</div>
-      <div class="hero-stat-pill">✅ {{ present_classes }} Present</div>
-      <div class="hero-stat-pill">❌ {{ absent_classes }} Absent</div>
+  </div>
+
+  <!-- Upcoming Exams -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Upcoming Exams</div>
+      <a href="{% url 'exam_list' %}" class="btn btn-sm btn-outline">All →</a>
     </div>
-    <div style="margin-top:1rem">
-      <a href="{% url 'scan_attendance' %}" class="btn btn-primary"
-         style="background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.35)">
-        📱 Scan QR Attendance
+    <div class="card-body">
+      {% if upcoming_exams %}
+      {% for e in upcoming_exams %}
+      <div
+        style="display:flex;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid var(--gray-100);align-items:center">
+        <div>
+          <div style="font-weight:600;font-size:.88rem">{{ e.name }}</div>
+          <div style="font-size:.75rem;color:var(--gray-400)">{{ e.exam_type.name }}</div>
+        </div>
+        <span class="status-badge pending" style="font-size:.75rem">{{ e.start_date|date:"d M" }}</span>
+      </div>
+      {% endfor %}
+      {% else %}
+      <p class="text-muted text-sm">No upcoming exams 🎉</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- ── RECENT NOTICES ────────────────────────────────────────── -->
+{% if recent_notices %}
+<div class="card fade-in-up" style="margin-bottom:1.5rem">
+  <div class="card-header">
+    <div class="card-title">Recent Notices</div>
+    <a href="{% url 'notice_list' %}" class="btn btn-sm btn-outline">All →</a>
+  </div>
+  <div class="card-body" style="padding:.75rem 1.25rem">
+    {% for n in recent_notices %}
+    <div style="display:flex;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid var(--gray-100)">
+      <a href="{% url 'notice_detail' n.pk %}"
+        style="text-decoration:none;color:var(--gray-800);font-weight:600;font-size:.88rem">
+        {% if n.is_pinned %}📌 {% endif %}{{ n.title }}
       </a>
+      <span class="text-muted text-sm">{{ n.created_at|date:"d M" }}</span>
     </div>
-  </div>
-</div>
-
-<div class="page-header fade-in-up">
-  <div>
-    <div class="page-header-title">Subject-wise Attendance</div>
-  </div>
-</div>
-
-{% if subject_attendance %}
-  {% for s in subject_attendance %}
-  <div class="attendance-row fade-in-up">
-    <div class="attendance-row-header">
-      <div class="attendance-subject">{{ s.subject }}</div>
-      <div class="attendance-pct {% if s.is_low %}low{% else %}good{% endif %}">{{ s.percentage }}%</div>
-    </div>
-    <div class="attendance-meta">
-      {{ s.present }} present · {{ s.absent }} absent · {{ s.total }} total
-      &nbsp;·&nbsp;
-      <span class="attendance-badge {% if s.is_low %}low{% elif s.percentage < 85 %}warning{% else %}good{% endif %}">
-        {% if s.is_low %}⚠ Below 75%{% elif s.percentage < 85 %}Near Threshold{% else %}Good Standing{% endif %}
-      </span>
-    </div>
-    <div class="progress-bar-track">
-      <div class="progress-bar-fill {% if s.is_low %}low{% elif s.percentage < 85 %}warning{% else %}good{% endif %}"
-           data-width="{{ s.percentage }}" style="width:0%"></div>
-    </div>
-  </div>
-  {% endfor %}
-{% else %}
-  <div class="empty-state fade-in-up">
-    <div class="empty-state-icon">📱</div>
-    <div class="empty-state-title">No attendance records yet</div>
-    <div class="text-sm text-muted mb-3">Scan a teacher's QR code to mark attendance.</div>
-    <a href="{% url 'scan_attendance' %}" class="btn btn-primary">Scan QR</a>
-  </div>
-{% endif %}
-
-{% if recent_records %}
-<div class="card fade-in-up" style="margin-top:2rem">
-  <div class="card-header"><div class="card-title">Recent Attendance</div></div>
-  <div class="table-wrapper" style="border:none;border-radius:0">
-    <table class="erp-table">
-      <thead><tr><th>Subject</th><th>Date</th><th>Time</th><th>Status</th></tr></thead>
-      <tbody>
-        {% for r in recent_records %}
-        <tr>
-          <td class="fw-semibold">{{ r.session.teacher_assignment.subject.name }}</td>
-          <td class="text-muted text-sm">{{ r.session.date|date:"d M Y" }}</td>
-          <td class="text-sm">{% if r.is_present %}{{ r.marked_at|time:"H:i" }}{% else %}—{% endif %}</td>
-          <td>{% if r.is_present %}<span class="attendance-badge good">✓ Present</span>{% else %}<span class="attendance-badge low">✕ Absent</span>{% endif %}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    {% endfor %}
   </div>
 </div>
 {% endif %}

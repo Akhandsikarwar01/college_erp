@@ -23,6 +23,7 @@ import csv
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
+from django.db.models import Count, Q
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -30,7 +31,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST, require_GET
 
 from apps.accounts.models import Role, StudentProfile
-from apps.faculty.models import TeacherAssignment
+from apps.faculty.models import TeacherAssignment, SectionIncharge
 
 from .models import AttendanceSession, AttendanceRecord, current_qr_token
 
@@ -385,3 +386,86 @@ def export_attendance_csv(request, session_id):
         ])
 
     return response
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# 10. STUDENT ATTENDANCE HISTORY
+# ──────────────────────────────────────────────────────────────────────────────
+
+@login_required
+def my_attendance(request):
+    if not _student_required(request):
+        messages.error(request, "Access denied.")
+        return redirect("dashboard")
+
+    student = request.user.student_profile
+    records = AttendanceRecord.objects.filter(
+        student=student
+    ).select_related(
+        "session__teacher_assignment__subject",
+        "session__teacher_assignment__teacher__user",
+    ).order_by("-session__date", "-marked_at")
+
+    total = records.count()
+    present = records.filter(is_present=True).count()
+    percentage = round((present / total) * 100, 1) if total else 0
+
+    subject_rows = records.values(
+        "session__teacher_assignment__subject__name"
+    ).annotate(
+        total=Count("id"),
+        present=Count("id", filter=Q(is_present=True)),
+    ).order_by("session__teacher_assignment__subject__name")
+
+    subject_attendance = []
+    for row in subject_rows:
+        sub_total = row["total"]
+        sub_present = row["present"]
+        sub_pct = round((sub_present / sub_total) * 100, 1) if sub_total else 0
+        subject_attendance.append({
+            "subject": row["session__teacher_assignment__subject__name"],
+            "total": sub_total,
+            "present": sub_present,
+            "absent": sub_total - sub_present,
+            "percentage": sub_pct,
+            "is_low": sub_pct < 75,
+        })
+
+    return render(request, "attendance/my_attendance.html", {
+        "records": records,
+        "total": total,
+        "present": present,
+        "absent": total - present,
+        "percentage": percentage,
+        "subject_attendance": subject_attendance,
+    })
+
+
+@login_required
+def section_attendance_overview(request):
+    if not _teacher_required(request):
+        messages.error(request, "Access denied.")
+        return redirect("dashboard")
+
+    incharge_sections = SectionIncharge.objects.filter(
+        teacher=request.user.teacher_profile
+    ).select_related("section__class_obj__course")
+
+    if not incharge_sections.exists():
+        messages.error(request, "You are not assigned as section incharge.")
+        return redirect("dashboard")
+
+    section_ids = [obj.section_id for obj in incharge_sections]
+
+    records = AttendanceRecord.objects.filter(
+        student__section_id__in=section_ids
+    ).select_related(
+        "student__user",
+        "student__section",
+        "session__teacher_assignment__subject",
+    ).order_by("-session__date", "-marked_at")[:200]
+
+    return render(request, "attendance/section_attendance_overview.html", {
+        "incharge_sections": incharge_sections,
+        "records": records,
+    })

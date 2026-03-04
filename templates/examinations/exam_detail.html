@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}{{ exam.name }}{% endblock %}
+{% block topbar_title %}Exam Detail{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in-up">
+    <div>
+        <div class="page-header-title">{{ exam.name }}</div>
+        <div class="page-header-subtitle">{{ exam.exam_type.name }} · {{ exam.course.name }} · Semester {{
+            exam.semester.number }}</div>
+    </div>
+    <div style="display:flex;gap:.75rem;align-items:center">
+        {% if exam.is_published %}
+        <span class="status-badge open" style="font-size:.85rem;padding:.35rem 1rem">✓ Published</span>
+        {% else %}
+        <span class="status-badge pending" style="font-size:.85rem;padding:.35rem 1rem">Draft</span>
+        {% endif %}
+        {% if request.user.is_erp_manager %}
+        <form method="post" action="{% url 'toggle_publish_exam' exam.pk %}" style="display:inline">
+            {% csrf_token %}
+            <button class="btn btn-sm {% if exam.is_published %}btn-secondary{% else %}btn-success{% endif %}">
+                {% if exam.is_published %}Unpublish{% else %}Publish{% endif %}
+            </button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<div class="stats-grid fade-in-up">
+    <div class="stat-card">
+        <div class="stat-card-icon indigo">📅</div>
+        <div class="stat-card-value">{{ exam.start_date|date:"d M" }}</div>
+        <div class="stat-card-label">Start Date</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-icon amber">📅</div>
+        <div class="stat-card-value">{{ exam.end_date|date:"d M" }}</div>
+        <div class="stat-card-label">End Date</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-icon green">📝</div>
+        <div class="stat-card-value">{{ schedules|length }}</div>
+        <div class="stat-card-label">Subjects Scheduled</div>
+    </div>
+</div>
+
+<div class="card fade-in-up">
+    <div class="card-header">
+        <div class="card-title">Exam Schedule</div>
+        {% if request.user.is_erp_manager %}
+        <a href="{% url 'add_exam_schedule' exam.pk %}" class="btn btn-sm btn-primary">+ Add Subject</a>
+        {% endif %}
+    </div>
+    {% if schedules %}
+    <div class="table-wrapper" style="border:none;border-radius:0">
+        <table class="erp-table">
+            <thead>
+                <tr>
+                    <th>Subject</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Room</th>
+                    <th>Max Marks</th>
+                    <th>Pass Marks</th>
+                    {% if request.user.is_teacher or request.user.is_erp_manager %}
+                    <th>Actions</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in schedules %}
+                <tr>
+                    <td class="fw-semibold">{{ s.subject.name }}</td>
+                    <td>{{ s.date|date:"d M Y" }}</td>
+                    <td class="text-muted">{{ s.start_time|time:"H:i" }} – {{ s.end_time|time:"H:i" }}</td>
+                    <td>{{ s.room|default:"—" }}</td>
+                    <td>{{ s.max_marks }}</td>
+                    <td>{{ s.passing_marks }}</td>
+                    {% if request.user.is_teacher or request.user.is_erp_manager %}
+                    <td>
+                        <div style="display:flex;gap:.5rem">
+                            <a href="{% url 'enter_results' s.pk %}" class="btn btn-sm btn-outline">Enter Results</a>
+                            <a href="{% url 'export_results_csv' s.pk %}" class="btn btn-sm btn-secondary">CSV</a>
+                        </div>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="card-body">
+        <div class="alert alert-info" style="margin:0">No subjects scheduled yet.</div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

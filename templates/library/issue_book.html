@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Issue Book{% endblock %}
+{% block topbar_title %}Issue Book{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in-up">
+    <div>
+        <div class="page-header-title">Issue Book</div>
+        <div class="page-header-subtitle">Issue a book to a user</div>
+    </div>
+</div>
+
+<div class="card fade-in-up" style="max-width:540px">
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label">Book</label>
+                <select name="book" class="form-control form-select" required>
+                    <option value="">Select book…</option>
+                    {% for b in books %}
+                    <option value="{{ b.pk }}">{{ b.title }} ({{ b.available_copies }} available)</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Borrower</label>
+                <select name="borrower" class="form-control form-select" required>
+                    <option value="">Select user…</option>
+                    {% for u in users %}
+                    <option value="{{ u.pk }}">{{ u.full_name }} ({{ u.username }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Loan Period (days)</label>
+                <input type="number" name="days" class="form-control" value="14" min="1" max="90">
+            </div>
+            <button type="submit" class="btn btn-primary btn-full">📖 Issue Book</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

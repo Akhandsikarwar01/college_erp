@@ -13,8 +13,11 @@ from django.utils import timezone
 
 class Role(models.TextChoices):
     ERP_MANAGER = "ERP_MANAGER", "ERP Manager"
+    ADMISSION_TEAM = "ADMISSION_TEAM", "Admission Team"
+    DEAN        = "DEAN",        "Dean"
     TEACHER     = "TEACHER",     "Teacher"
     STUDENT     = "STUDENT",     "Student"
+    PARENT      = "PARENT",      "Parent"
 
 
 class CustomUser(AbstractUser):
@@ -45,8 +48,20 @@ class CustomUser(AbstractUser):
         return self.role == Role.TEACHER
 
     @property
+    def is_dean(self):
+        return self.role == Role.DEAN
+
+    @property
+    def is_admission_team(self):
+        return self.role == Role.ADMISSION_TEAM
+
+    @property
     def is_erp_manager(self):
         return self.role == Role.ERP_MANAGER or self.is_superuser
+
+    @property
+    def is_parent(self):
+        return self.role == Role.PARENT
 
     def __str__(self):
         return f"{self.username} ({self.get_role_display()})"
@@ -61,7 +76,19 @@ class StudentProfile(models.Model):
     )
     admission_number  = models.CharField(max_length=30, unique=True)
     enrollment_number = models.CharField(max_length=30, unique=True)
+    application_number = models.CharField(max_length=30, unique=True, null=True, blank=True)
     roll_number       = models.CharField(max_length=20)
+    father_name       = models.CharField(max_length=120, blank=True)
+    mother_name       = models.CharField(max_length=120, blank=True)
+    date_of_birth     = models.DateField(null=True, blank=True)
+    gender            = models.CharField(max_length=20, blank=True)
+    blood_group       = models.CharField(max_length=5, blank=True)
+    address_line_1    = models.CharField(max_length=255, blank=True)
+    address_line_2    = models.CharField(max_length=255, blank=True)
+    city              = models.CharField(max_length=100, blank=True)
+    state             = models.CharField(max_length=100, blank=True)
+    pincode           = models.CharField(max_length=10, blank=True)
+    guardian_phone    = models.CharField(max_length=15, blank=True)
 
     class Meta:
         ordering = ["roll_number"]
@@ -78,6 +105,24 @@ class TeacherProfile(models.Model):
 
     def __str__(self):
         return f"{self.user.username} – {self.employee_id}"
+
+
+class DeanProfile(models.Model):
+    user = models.OneToOneField(
+        CustomUser, on_delete=models.CASCADE, related_name="dean_profile"
+    )
+    department = models.ForeignKey(
+        "academics.Department", on_delete=models.CASCADE, related_name="deans"
+    )
+    employee_id = models.CharField(max_length=20, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["department"], name="unique_dean_per_department")
+        ]
+
+    def __str__(self):
+        return f"{self.user.full_name} – Dean ({self.department.code})"
 
 
 class OTP(models.Model):
@@ -98,3 +143,29 @@ class OTP(models.Model):
 
     def __str__(self):
         return f"{self.user.username} – {self.code}"
+
+
+class ParentProfile(models.Model):
+    """
+    Parent/Guardian account linked to one or more students via mobile number/email
+    """
+    user = models.OneToOneField(
+        CustomUser, on_delete=models.CASCADE, related_name="parent_profile"
+    )
+    students = models.ManyToManyField(
+        StudentProfile, related_name="parents", blank=True,
+        help_text="Students for whom this parent is a guardian"
+    )
+    relationship = models.CharField(
+        max_length=50, blank=True,
+        choices=[
+            ('father', 'Father'),
+            ('mother', 'Mother'),
+            ('guardian', 'Guardian'),
+            ('other', 'Other'),
+        ],
+        help_text="Relationship to the student"
+    )
+
+    def __str__(self):
+        return f"{self.user.full_name} (Parent)"

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Post Notice{% endblock %}
+{% block topbar_title %}Post Notice{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in-up">
+    <div>
+        <div class="page-header-title">Post Notice</div>
+        <div class="page-header-subtitle">Create a new announcement</div>
+    </div>
+</div>
+
+<div class="card fade-in-up" style="max-width:640px">
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label">Title</label>
+                <input type="text" name="title" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Content</label>
+                <textarea name="content" class="form-control" rows="6" required></textarea>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+                <div class="form-group">
+                    <label class="form-label">Category</label>
+                    <select name="category" class="form-control form-select">
+                        <option value="">None</option>
+                        {% for c in categories %}<option value="{{ c.pk }}">{{ c.name }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Target Audience</label>
+                    <select name="target_role" class="form-control form-select">
+                        <option value="ALL">Everyone</option>
+                        <option value="STUDENT">Students Only</option>
+                        <option value="TEACHER">Teachers Only</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Attachment</label>
+                <input type="file" name="attachment" class="form-control">
+            </div>
+            <div class="form-group">
+                <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer">
+                    <input type="checkbox" name="is_pinned" style="width:16px;height:16px;accent-color:var(--warning)">
+                    <span class="form-label" style="margin:0;text-transform:none">📌 Pin this notice</span>
+                </label>
+            </div>
+            <button type="submit" class="btn btn-primary btn-full">Publish Notice</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

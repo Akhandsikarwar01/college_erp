@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Add Schedule{% endblock %}
+{% block topbar_title %}Add Exam Schedule{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in-up">
+    <div>
+        <div class="page-header-title">Add Subject Schedule</div>
+        <div class="page-header-subtitle">{{ exam.name }}</div>
+    </div>
+</div>
+
+<div class="card fade-in-up" style="max-width:640px">
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label">Subject</label>
+                <select name="subject" class="form-control form-select" required>
+                    <option value="">Select subject…</option>
+                    {% for s in subjects %}
+                    <option value="{{ s.pk }}">{{ s.name }} ({{ s.code }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Date</label>
+                <input type="date" name="date" class="form-control" required>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+                <div class="form-group">
+                    <label class="form-label">Start Time</label>
+                    <input type="time" name="start_time" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">End Time</label>
+                    <input type="time" name="end_time" class="form-control" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Room</label>
+                <input type="text" name="room" class="form-control" placeholder="e.g. Room 101">
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+                <div class="form-group">
+                    <label class="form-label">Max Marks</label>
+                    <input type="number" name="max_marks" class="form-control" value="100" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Passing Marks</label>
+                    <input type="number" name="passing_marks" class="form-control" value="40" required>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-full" style="margin-top:.5rem">Add Schedule</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

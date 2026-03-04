@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}{{ notice.title }}{% endblock %}
+{% block topbar_title %}Notice{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in-up">
+    <div>
+        <div class="page-header-title">{{ notice.title }}</div>
+        <div class="page-header-subtitle">
+            {{ notice.created_at|date:"d M Y, H:i" }} · {{ notice.posted_by.full_name }}
+            {% if notice.category %} · {{ notice.category.name }}{% endif %}
+        </div>
+    </div>
+    <a href="{% url 'notice_list' %}" class="btn btn-outline">← Back</a>
+</div>
+
+<div class="card fade-in-up">
+    <div class="card-body">
+        <div style="white-space:pre-wrap;font-size:.95rem;color:var(--gray-700);line-height:1.7">{{ notice.content }}
+        </div>
+        {% if notice.attachment %}
+        <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--gray-100)">
+            <a href="{{ notice.attachment.url }}" class="btn btn-sm btn-outline" target="_blank">📎 Download
+                Attachment</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if request.user.is_erp_manager or request.user == notice.posted_by %}
+<div style="margin-top:1rem" class="fade-in-up">
+    <form method="post" action="{% url 'delete_notice' notice.pk %}" style="display:inline"
+        onsubmit="return confirm('Delete this notice?')">
+        {% csrf_token %}
+        <button class="btn btn-sm btn-danger">🗑 Delete Notice</button>
+    </form>
+</div>
+{% endif %}
+{% endblock %}

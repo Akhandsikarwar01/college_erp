@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Library{% endblock %}
+{% block topbar_title %}Library{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in-up">
+    <div>
+        <div class="page-header-title">Book Catalog 📚</div>
+        <div class="page-header-subtitle">Browse and search books</div>
+    </div>
+    {% if request.user.is_erp_manager %}
+    <div style="display:flex;gap:.75rem">
+        <a href="{% url 'add_book' %}" class="btn btn-primary">+ Add Book</a>
+        <a href="{% url 'issue_book' %}" class="btn btn-outline">Issue Book</a>
+        <a href="{% url 'issued_books' %}" class="btn btn-outline">Issued Books</a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Search -->
+<div class="fade-in-up" style="margin-bottom:1.5rem">
+    <form method="get" style="display:flex;gap:.75rem;align-items:center">
+        <input type="text" name="q" class="form-control" placeholder="Search by title or author…"
+            value="{{ search_query }}" style="max-width:400px">
+        {% if categories %}
+        <select name="category" class="form-control form-select" style="max-width:200px">
+            <option value="">All Categories</option>
+            {% for c in categories %}
+            <option value="{{ c.pk }}" {% if selected_category==c.pk|stringformat:'d' %}selected{% endif %}>{{ c.name }}
+            </option>
+            {% endfor %}
+        </select>
+        {% endif %}
+        <button type="submit" class="btn btn-primary">Search</button>
+    </form>
+</div>
+
+{% if books %}
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.25rem" class="fade-in-up">
+    {% for book in books %}
+    <div class="card">
+        <div class="card-body">
+            <div style="font-weight:600;font-size:1rem;color:var(--gray-900);margin-bottom:.25rem">{{ book.title }}
+            </div>
+            <div style="font-size:.85rem;color:var(--gray-500);margin-bottom:.75rem">by {{ book.author }}</div>
+            {% if book.category %}<span class="status-badge open" style="margin-bottom:.5rem;display:inline-block">{{
+                book.category.name }}</span>{% endif %}
+            <div
+                style="display:flex;justify-content:space-between;font-size:.82rem;margin-top:.5rem;padding-top:.5rem;border-top:1px solid var(--gray-100)">
+                <span class="text-muted">ISBN: {{ book.isbn|default:"—" }}</span>
+                <span
+                    style="font-weight:600;color:{% if book.is_available %}var(--success){% else %}var(--danger){% endif %}">
+                    {{ book.available_copies }}/{{ book.total_copies }} available
+                </span>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="alert alert-info fade-in-up">📚 No books found.</div>
+{% endif %}
+{% endblock %}

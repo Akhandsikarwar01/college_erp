@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Fee Structure{% endblock %}
+{% block topbar_title %}Fee Structure{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in-up">
+    <div>
+        <div class="page-header-title">Fee Structure</div>
+        <div class="page-header-subtitle">Manage fee types and amounts per course</div>
+    </div>
+</div>
+
+<!-- Add Fee Structure Form -->
+<div class="card fade-in-up" style="margin-bottom:1.5rem">
+    <div class="card-header">
+        <div class="card-title">Add Fee Structure</div>
+    </div>
+    <div class="card-body">
+        <form method="post" action="{% url 'add_fee_structure' %}"
+            style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1rem;align-items:end">
+            {% csrf_token %}
+            <div class="form-group" style="margin:0">
+                <label class="form-label">Fee Type</label>
+                <select name="fee_type" class="form-control form-select" required>
+                    <option value="">Select…</option>
+                    {% for t in fee_types %}<option value="{{ t.pk }}">{{ t.name }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="form-group" style="margin:0">
+                <label class="form-label">Course</label>
+                <select name="course" class="form-control form-select" required>
+                    <option value="">Select…</option>
+                    {% for c in courses %}<option value="{{ c.pk }}">{{ c.name }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="form-group" style="margin:0">
+                <label class="form-label">Semester</label>
+                <select name="semester" class="form-control form-select" required>
+                    <option value="">Select…</option>
+                    {% for s in semesters %}<option value="{{ s.pk }}">Sem {{ s.number }} – {{ s.course.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group" style="margin:0">
+                <label class="form-label">Amount (₹)</label>
+                <input type="number" name="amount" class="form-control" step="0.01" min="0" required>
+            </div>
+            <button type="submit" class="btn btn-primary">+ Add</button>
+        </form>
+    </div>
+</div>
+
+{% if structures %}
+<div class="table-wrapper fade-in-up">
+    <table class="erp-table">
+        <thead>
+            <tr>
+                <th>Fee Type</th>
+                <th>Course</th>
+                <th>Semester</th>
+                <th>Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in structures %}
+            <tr>
+                <td class="fw-semibold">{{ s.fee_type.name }}</td>
+                <td>{{ s.course.name }}</td>
+                <td>Sem {{ s.semester.number }}</td>
+                <td style="font-weight:600;color:var(--success)">₹{{ s.amount|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-info fade-in-up">No fee structures defined yet.</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Section Attendance Overview{% endblock %}
+{% block topbar_title %}Section Attendance Overview{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in-up">
+  <div>
+    <div class="page-header-title">Section Incharge Attendance Control</div>
+    <div class="page-header-subtitle">Monitor attendance for your assigned sections</div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:1rem">
+  <div class="card-header"><div class="card-title">Assigned Sections</div></div>
+  <div class="card-body" style="display:flex;flex-wrap:wrap;gap:.5rem">
+    {% for item in incharge_sections %}
+      <span class="status-badge open">{{ item.section.class_obj.course.name }} - {{ item.section.name }}</span>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="card fade-in-up">
+  <div class="card-header"><div class="card-title">Latest Attendance Records</div></div>
+  <div class="table-wrapper" style="border:none;border-radius:0">
+    <table class="erp-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Section</th>
+          <th>Student</th>
+          <th>Subject</th>
+          <th>Status</th>
+          <th>Marked At</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for rec in records %}
+        <tr>
+          <td>{{ rec.session.date|date:"d M Y" }}</td>
+          <td>{{ rec.student.section.name }}</td>
+          <td>{{ rec.student.user.full_name }} ({{ rec.student.roll_number }})</td>
+          <td>{{ rec.session.teacher_assignment.subject.name }}</td>
+          <td>
+            {% if rec.is_present %}
+              <span class="status-badge open">Present</span>
+            {% else %}
+              <span class="status-badge locked">Absent</span>
+            {% endif %}
+          </td>
+          <td>{{ rec.marked_at|date:"d M Y, g:i A" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6">No attendance records found for your assigned sections.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

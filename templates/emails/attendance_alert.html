@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 5px 5px 0 0; }
+        .content { background: #f9f9f9; padding: 20px; border-radius: 0 0 5px 5px; }
+        .alert-box { background: #f8d7da; border-left: 4px solid #f5424e; padding: 15px; margin: 15px 0; border-radius: 3px; color: #721c24; }
+        .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0; }
+        .stat-card { background: white; padding: 15px; border-radius: 5px; text-align: center; border: 1px solid #ddd; }
+        .stat-value { font-size: 24px; font-weight: bold; color: #667eea; }
+        .stat-label { color: #999; font-size: 12px; text-transform: uppercase; }
+        .button { display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin-top: 15px; }
+        .footer { text-align: center; color: #999; font-size: 12px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>⚠️ Attendance Alert</h2>
+        </div>
+        <div class="content">
+            <p>Dear {{ parent_name }},</p>
+            
+            <p>This is an important notification regarding {{ student_name }}'s attendance record.</p>
+            
+            <div class="alert-box">
+                <strong>Current Attendance: {{ attendance_pct }}%</strong><br>
+                <small>Minimum required: {{ threshold }}%</small>
+            </div>
+            
+            <p style="color: #721c24; font-weight: bold;">⚠️ The attendance has fallen below the minimum required percentage. We recommend taking appropriate action to improve attendance.</p>
+            
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-value">{{ present }}</div>
+                    <div class="stat-label">Classes Attended</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{{ total }}</div>
+                    <div class="stat-label">Total Classes</div>
+                </div>
+            </div>
+            
+            <p><strong>What can you do?</strong></p>
+            <ul>
+                <li>Review the attendance records in the parent portal</li>
+                <li>Identify reasons for absence and address them</li>
+                <li>Ensure your child attends all classes regularly</li>
+                <li>Contact the school if there are any underlying issues</li>
+            </ul>
+            
+            <a href="{{ portal_url }}" class="button">View Full Attendance Report</a>
+            
+            <p style="margin-top: 20px;">If you have any questions or concerns, please feel free to contact us.</p>
+            
+            <p>Best regards,<br>Student Affairs - Administration</p>
+        </div>
+        <div class="footer">
+            <p>This is an automated email. Please do not reply to this message.</p>
+        </div>
+    </div>
+</body>
+</html>

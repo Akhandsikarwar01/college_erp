@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Timetable{% endblock %}
+{% block topbar_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in-up">
+    <div>
+        <div class="page-header-title">{{ title }} 📅</div>
+        <div class="page-header-subtitle">Weekly schedule</div>
+    </div>
+    {% if request.user.is_erp_manager %}
+    <a href="{% url 'manage_timetable' %}" class="btn btn-primary">⚙ Manage</a>
+    {% endif %}
+</div>
+
+{% if grid %}
+<div class="card fade-in-up" style="overflow-x:auto">
+    <table class="erp-table" style="min-width:800px">
+        <thead>
+            <tr>
+                <th style="width:120px">Period</th>
+                {% for day_num, day_name in days %}
+                <th>{{ day_name }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in grid %}
+            <tr{% if row.slot.is_break %} style="background:var(--warning-bg)" {% endif %}>
+                <td>
+                    <div class="fw-semibold">{% if row.slot.is_break %}{{ row.slot.label|default:"Break" }}{% else
+                        %}Period {{ row.slot.slot_number }}{% endif %}</div>
+                    <div class="text-muted text-sm">{{ row.slot.start_time|time:"H:i" }}–{{ row.slot.end_time|time:"H:i"
+                        }}</div>
+                </td>
+                {% for cell in row.cells %}
+                <td>
+                    {% if cell.entry %}
+                    <div
+                        style="background:var(--brand-50);border:1px solid var(--brand-200);border-radius:var(--radius-sm);padding:.5rem .75rem">
+                        <div style="font-weight:600;font-size:.85rem;color:var(--brand-700)">{{
+                            cell.entry.teacher_assignment.subject.name }}</div>
+                        <div style="font-size:.75rem;color:var(--gray-500);margin-top:.15rem">{{
+                            cell.entry.teacher_assignment.teacher.user.full_name }}</div>
+                    </div>
+                    {% elif not row.slot.is_break %}
+                    <span class="text-muted text-sm">—</span>
+                    {% endif %}
+                </td>
+                {% endfor %}
+                </tr>
+                {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-info fade-in-up">📅 No timetable entries found.</div>
+{% endif %}
+{% endblock %}

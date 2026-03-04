@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Dean Dashboard{% endblock %}
+{% block topbar_title %}Dean Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in-up">
+  <div>
+    <div class="page-header-title">{{ department.name }} — Dean Dashboard</div>
+    <div class="page-header-subtitle">Department-level controls and approvals</div>
+  </div>
+</div>
+
+<div class="stats-grid fade-in-up" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr));margin-bottom:1.25rem">
+  <div class="stat-card">
+    <div class="stat-card-icon indigo">🎓</div>
+    <div class="stat-card-value">{{ students_count }}</div>
+    <div class="stat-card-label">Department Students</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-icon green">👨‍🏫</div>
+    <div class="stat-card-value">{{ teachers_count }}</div>
+    <div class="stat-card-label">Department Teachers</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-icon amber">⏳</div>
+    <div class="stat-card-value">{{ leaves_pending }}</div>
+    <div class="stat-card-label">Pending Leave Requests</div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:.75rem;margin-bottom:1.25rem" class="fade-in-up">
+  <a href="{% url 'leave_approvals' %}" class="quick-action-card">
+    <div class="qa-icon">✅</div>
+    <div class="qa-label">Approve Leaves</div>
+  </a>
+  <a href="{% url 'notice_list' %}" class="quick-action-card">
+    <div class="qa-icon">📢</div>
+    <div class="qa-label">Department Notices</div>
+  </a>
+  <a href="{% url 'event_list' %}" class="quick-action-card">
+    <div class="qa-icon">📅</div>
+    <div class="qa-label">Department Events</div>
+  </a>
+</div>
+
+<div class="card fade-in-up">
+  <div class="card-header">
+    <div class="card-title">Recent Notices</div>
+  </div>
+  <div class="card-body" style="padding:.75rem 1.25rem">
+    {% for n in recent_notices %}
+      <div style="display:flex;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid var(--gray-100)">
+        <a href="{% url 'notice_detail' n.pk %}" style="text-decoration:none;color:var(--gray-800);font-weight:600;font-size:.88rem">
+          {% if n.is_pinned %}📌 {% endif %}{{ n.title }}
+        </a>
+        <span class="text-muted text-sm">{{ n.created_at|date:"d M" }}</span>
+      </div>
+    {% empty %}
+      <p class="text-muted text-sm">No notices yet.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

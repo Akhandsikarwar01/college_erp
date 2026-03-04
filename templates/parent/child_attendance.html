@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ child_user.full_name }} - Attendance{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="row mb-4">
+    <div class="col-md-8">
+      <h1 class="h2">{{ child_user.full_name }} - Attendance Report 📊</h1>
+      <p class="text-muted">Full attendance history for the academic year</p>
+    </div>
+    <div class="col-md-4 text-end">
+      <a href="{% url 'download_attendance_report' child.id %}" class="btn btn-primary btn-sm me-2">Download PDF</a>
+      <a href="{% url 'parent_dashboard' %}" class="btn btn-outline-secondary btn-sm">← Back to Dashboard</a>
+    </div>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="card border-0 bg-light">
+        <div class="card-body text-center">
+          <div class="text-muted small mb-1">Total Sessions</div>
+          <div style="font-size: 2rem; font-weight: bold; color: #3b82f6;">{{ summary.total }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card border-0 bg-light">
+        <div class="card-body text-center">
+          <div class="text-muted small mb-1">Present</div>
+          <div style="font-size: 2rem; font-weight: bold; color: #10b981;">{{ summary.present }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card border-0 bg-light">
+        <div class="card-body text-center">
+          <div class="text-muted small mb-1">Absent</div>
+          <div style="font-size: 2rem; font-weight: bold; color: #ef4444;">{{ summary.absent }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card border-0 bg-light">
+        <div class="card-body text-center">
+          <div class="text-muted small mb-1">Late</div>
+          <div style="font-size: 2rem; font-weight: bold; color: #f59e0b;">{{ summary.late }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Overall Percentage -->
+  <div class="card border-0 mb-4">
+    <div class="card-body">
+      <div class="row align-items-center">
+        <div class="col-md-8">
+          <h5 class="mb-2">Overall Attendance</h5>
+          <div class="progress" style="height: 20px;">
+            <div class="progress-bar" style="width: {{ summary.percentage }}%; background-color: {% if summary.percentage >= 75 %}#10b981{% elif summary.percentage >= 60 %}#f59e0b{% else %}#ef4444{% endif %}; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+              {{ summary.percentage }}%
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4 text-end">
+          <div class="alert alert-{% if summary.percentage >= 75 %}success{% elif summary.percentage >= 60 %}warning{% else %}danger{% endif %} mb-0">
+            {% if summary.percentage >= 75 %}
+              ✓ Good attendance
+            {% elif summary.percentage >= 60 %}
+              ⚠ Needs improvement
+            {% else %}
+              ✗ Critical
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detailed Records -->
+  <div class="card border-0">
+    <div class="card-header bg-white border-bottom">
+      <h5 class="mb-0">📋 Attendance Records</h5>
+    </div>
+    <div class="card-body">
+      {% if attendance_records %}
+        <div class="table-responsive">
+          <table class="table table-sm table-hover">
+            <thead style="background-color: #f3f4f6;">
+              <tr>
+                <th>Date</th>
+                <th>Subject</th>
+                <th>Status</th>
+                <th>Remarks</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for record in attendance_records %}
+                <tr>
+                  <td>
+                    <small>{{ record.session.date|date:"d M Y" }}</small>
+                  </td>
+                  <td>
+                    <small>{{ record.session.subject.name }}</small>
+                  </td>
+                  <td>
+                    <span class="badge" style="background-color: 
+                      {% if record.status == 'present' %}#10b981
+                      {% elif record.status == 'absent' %}#ef4444
+                      {% elif record.status == 'late' %}#f59e0b
+                      {% else %}#6b7280{% endif %};">
+                      {{ record.get_status_display|upper }}
+                    </span>
+                  </td>
+                  <td>
+                    <small class="text-muted">{{ record.remarks|default:"-" }}</small>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="alert alert-info mb-0">
+          <strong>No attendance records found.</strong> Records will appear here as the academic session progresses.
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Info Box -->
+  <div class="mt-4 p-3 bg-light rounded text-muted small">
+    <strong>📌 Note:</strong> Attendance is marked daily. The minimum required attendance is 75% for exam eligibility. Contact the school if you have concerns about your child's attendance.
+  </div>
+</div>
+{% endblock %}

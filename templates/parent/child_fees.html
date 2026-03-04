@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ child_user.full_name }} - Fees{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="row mb-4">
+    <div class="col-md-8">
+      <h1 class="h2">{{ child_user.full_name }} - Fee Payment Info 💳</h1>
+      <p class="text-muted">Complete fee details and payment history</p>
+    </div>
+    <div class="col-md-4 text-end">
+      <a href="{% url 'download_fee_report' child.id %}" class="btn btn-primary btn-sm me-2">Download PDF</a>
+      <a href="{% url 'parent_dashboard' %}" class="btn btn-outline-secondary btn-sm">← Back to Dashboard</a>
+    </div>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="row mb-4">
+    <div class="col-md-4">
+      <div class="card border-0 bg-light">
+        <div class="card-body text-center">
+          <div class="text-muted small mb-1">Total Fee Amount</div>
+          <div style="font-size: 1.8rem; font-weight: bold; color: #3b82f6;">₹{{ summary.total|floatformat:0 }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card border-0 bg-light">
+        <div class="card-body text-center">
+          <div class="text-muted small mb-1">Paid Amount</div>
+          <div style="font-size: 1.8rem; font-weight: bold; color: #10b981;">₹{{ summary.paid|floatformat:0 }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card border-0 bg-light">
+        <div class="card-body text-center">
+          <div class="text-muted small mb-1">Pending Amount</div>
+          <div style="font-size: 1.8rem; font-weight: bold; color: #ef4444;">₹{{ summary.pending|floatformat:0 }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fee Payment Progress -->
+  <div class="card border-0 mb-4">
+    <div class="card-body">
+      <h5 class="mb-3">Payment Progress</h5>
+      <div class="progress" style="height: 20px;">
+        <div class="progress-bar bg-success" style="width: {{ summary.payment_percentage }}%;">
+        </div>
+      </div>
+      <small class="text-muted d-block mt-2">
+        ₹{{ summary.paid|floatformat:0 }} of ₹{{ summary.total|floatformat:0 }} paid ({{ summary.payment_percentage }}%)
+      </small>
+    </div>
+  </div>
+
+  <!-- Fee Breakdown -->
+  <div class="card border-0 mb-4">
+    <div class="card-header bg-white border-bottom">
+      <h5 class="mb-0">📋 Fee Breakdown</h5>
+    </div>
+    <div class="card-body">
+      {% if fees %}
+        <div class="table-responsive">
+          <table class="table table-sm">
+            <thead style="background-color: #f3f4f6;">
+              <tr>
+                <th>Fee Type</th>
+                <th class="text-end">Total Amount</th>
+                <th class="text-end">Paid Amount</th>
+                <th class="text-end">Pending</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for fee in fees %}
+                <tr>
+                  <td>{{ fee.fee_type.name }}</td>
+                  <td class="text-end">₹{{ fee.total_amount|floatformat:0 }}</td>
+                  <td class="text-end">₹{{ fee.paid_amount|floatformat:0 }}</td>
+                  <td class="text-end text-danger">₹{{ fee.total_amount|add:fee.paid_amount|floatformat:0 }}</td>
+                  <td>
+                    {% if fee.paid_amount >= fee.total_amount %}
+                      <span class="badge bg-success">Paid</span>
+                    {% else %}
+                      <span class="badge bg-warning">Pending</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="alert alert-info mb-0">
+          <strong>No fee records found.</strong>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Payment History -->
+  <div class="card border-0">
+    <div class="card-header bg-white border-bottom">
+      <h5 class="mb-0">💰 Payment History</h5>
+    </div>
+    <div class="card-body">
+      {% if payments %}
+        <div class="table-responsive">
+          <table class="table table-sm">
+            <thead style="background-color: #f3f4f6;">
+              <tr>
+                <th>Payment Date</th>
+                <th>Amount</th>
+                <th>Method</th>
+                <th>Receipt</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for payment in payments %}
+                <tr>
+                  <td><small>{{ payment.payment_date|date:"d M Y" }}</small></td>
+                  <td class="text-success"><strong>₹{{ payment.amount|floatformat:0 }}</strong></td>
+                  <td><small>{{ payment.payment_method|default:"-" }}</small></td>
+                  <td>
+                    <small class="text-muted">{{ payment.transaction_id|default:"-" }}</small>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="alert alert-info mb-0">
+          <strong>No payment history yet.</strong> Payments will appear here after submission.
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="mt-4 text-center">
+    {% if summary.pending > 0 %}
+      <button class="btn btn-primary btn-lg" disabled>
+        💳 Online Payment Coming Soon
+      </button>
+      <small class="d-block text-muted mt-2">Online fee payment feature will be available soon. Please contact the school office to make payments.</small>
+    {% else %}
+      <div class="alert alert-success">
+        <strong>🎉 All fees paid!</strong> Your child's account is up to date.
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Info Box -->
+  <div class="mt-4 p-3 bg-light rounded text-muted small">
+    <strong>📌 Note:</strong> Fee payments must be made on or before the due date. Late payments may result in additional charges. Contact the school office for payment plans or discounts.
+  </div>
+</div>
+{% endblock %}

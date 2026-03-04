@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Fee Collection Report{% endblock %}
+{% block topbar_title %}Fee Report{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in-up">
+    <div>
+        <div class="page-header-title">Fee Collection Report</div>
+        <div class="page-header-subtitle">Overview of all student fee payments</div>
+    </div>
+    <div style="display:flex;gap:.75rem">
+        <a href="{% url 'generate_fees' %}" class="btn btn-primary">Generate Fees</a>
+        <a href="{% url 'fee_structure_list' %}" class="btn btn-outline">Fee Structure</a>
+    </div>
+</div>
+
+<div class="stats-grid fade-in-up">
+    <div class="stat-card">
+        <div class="stat-card-icon indigo">💰</div>
+        <div class="stat-card-value">₹{{ total_due|floatformat:0 }}</div>
+        <div class="stat-card-label">Total Due</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-icon green">✓</div>
+        <div class="stat-card-value">₹{{ total_paid|floatformat:0 }}</div>
+        <div class="stat-card-label">Total Collected</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-icon red">⏳</div>
+        <div class="stat-card-value">₹{{ total_balance|floatformat:0 }}</div>
+        <div class="stat-card-label">Outstanding</div>
+    </div>
+</div>
+
+{% if fees %}
+<div class="table-wrapper fade-in-up">
+    <table class="erp-table">
+        <thead>
+            <tr>
+                <th>Student</th>
+                <th>Roll No</th>
+                <th>Semester</th>
+                <th>Total</th>
+                <th>Paid</th>
+                <th>Balance</th>
+                <th>Status</th>
+                <th>Due Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for f in fees %}
+            <tr>
+                <td class="fw-semibold">{{ f.student.user.full_name }}</td>
+                <td class="text-muted">{{ f.student.roll_number }}</td>
+                <td>Sem {{ f.semester.number }}</td>
+                <td>₹{{ f.total_amount|floatformat:0 }}</td>
+                <td style="color:var(--success);font-weight:600">₹{{ f.paid_amount|floatformat:0 }}</td>
+                <td
+                    style="color:{% if f.balance > 0 %}var(--danger){% else %}var(--success){% endif %};font-weight:600">
+                    ₹{{ f.balance|floatformat:0 }}</td>
+                <td>
+                    <span
+                        class="status-badge {% if f.is_paid %}open{% elif f.paid_amount > 0 %}pending{% else %}locked{% endif %}">
+                        {{ f.status }}
+                    </span>
+                </td>
+                <td class="text-muted text-sm">{{ f.due_date|date:"d M Y" }}</td>
+                <td>
+                    {% if not f.is_paid %}
+                    <a href="{% url 'record_payment' f.pk %}" class="btn btn-sm btn-success">Record Payment</a>
+                    {% else %}
+                    <span class="text-muted text-sm">Fully paid</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-info fade-in-up">No fee records found. Use "Generate Fees" to create them.</div>
+{% endif %}
+{% endblock %}

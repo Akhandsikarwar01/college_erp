@@ -11,7 +11,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 # SECURITY - Override in production via environment variables
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "change-me-in-production")
 DEBUG = False
-ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "").split(",")
+ALLOWED_HOSTS_ENV = os.environ.get("ALLOWED_HOSTS", "")
+if ALLOWED_HOSTS_ENV.strip():
+    ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_ENV.split(",") if host.strip()]
+else:
+    ALLOWED_HOSTS = ["127.0.0.1", "localhost", "testserver"]
 
 # ─── APPS ──────────────────────────────────────────────────────────────────────
 
@@ -28,6 +32,12 @@ INSTALLED_APPS = [
     "apps.academics",
     "apps.faculty",
     "apps.attendance",
+    "apps.examinations",
+    "apps.fees",
+    "apps.timetable",
+    "apps.notices",
+    "apps.leave",
+    "apps.library",
 ]
 
 # ─── MIDDLEWARE ─────────────────────────────────────────────────────────────────
@@ -112,15 +122,13 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 # ─── EMAIL ─────────────────────────────────────────────────────────────────────
 
-EMAIL_BACKEND = os.environ.get(
-    "EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend"
-)
-EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp.gmail.com")
-EMAIL_PORT = int(os.environ.get("EMAIL_PORT", 587))
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
-EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
-DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "noreply@college-erp.com")
+EMAIL_HOST_USER = "eprmanager.akhand@gmail.com"
+EMAIL_HOST_PASSWORD = "cdpgvvosjflyzuzu"
+DEFAULT_FROM_EMAIL = "eprmanager.akhand@gmail.com"
 
 # ─── DEFAULT PRIMARY KEY ───────────────────────────────────────────────────────
 

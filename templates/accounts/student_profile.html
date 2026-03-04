@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %}My Profile{% endblock %}
+{% block topbar_title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in-up">
+    <div>
+        <div class="page-header-title">{{ request.user.full_name }}</div>
+        <div class="page-header-subtitle">Student Profile</div>
+    </div>
+</div>
+
+<!-- Profile Card -->
+<div class="card fade-in-up" style="margin-bottom:1.5rem">
+    <div class="card-body">
+        <div style="display:flex;align-items:center;gap:1.5rem">
+            <div
+                style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--brand-500),var(--brand-700));display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.5rem;font-weight:700;flex-shrink:0">
+                {{ request.user.first_name|first|upper }}{{ request.user.last_name|first|upper }}
+            </div>
+            <div style="flex:1">
+                <h2 style="font-size:1.3rem;font-weight:700;margin-bottom:.25rem;color:var(--gray-900)">{{
+                    request.user.full_name }}</h2>
+                <div style="display:flex;flex-wrap:wrap;gap:1rem;font-size:.85rem;color:var(--gray-500)">
+                    <span>📧 {{ request.user.email }}</span>
+                    <span>🆔 {{ request.user.username }}</span>
+                </div>
+                {% if profile %}
+                <div
+                    style="display:flex;flex-wrap:wrap;gap:1rem;font-size:.85rem;color:var(--gray-500);margin-top:.5rem">
+                    <span>🎫 Adm: {{ profile.admission_number }}</span>
+                    <span>📋 Enr: {{ profile.enrollment_number }}</span>
+                    {% if profile.section %}<span>🏫 {{ profile.section.name }}</span>{% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Grid -->
+<div class="stats-grid fade-in-up" style="grid-template-columns:repeat(auto-fill,minmax(155px,1fr))">
+    <div class="stat-card">
+        <div class="stat-card-icon indigo">📅</div>
+        <div class="stat-card-value">{{ att_pct }}%</div>
+        <div class="stat-card-label">Attendance</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-icon green">✅</div>
+        <div class="stat-card-value">{{ att_present }}/{{ att_total }}</div>
+        <div class="stat-card-label">Present</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-icon amber">💰</div>
+        <div class="stat-card-value">₹{{ fee_paid|floatformat:0 }}</div>
+        <div class="stat-card-label">Fees Paid</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-icon red">💳</div>
+        <div class="stat-card-value">₹{{ fee_balance|floatformat:0 }}</div>
+        <div class="stat-card-label">Outstanding</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-icon indigo">📊</div>
+        <div class="stat-card-value">{{ result_count }}</div>
+        <div class="stat-card-label">Results</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-icon green">🏖</div>
+        <div class="stat-card-value">{{ leave_taken }}</div>
+        <div class="stat-card-label">Leave Taken</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-icon amber">📚</div>
+        <div class="stat-card-value">{{ books_current }}</div>
+        <div class="stat-card-label">Books Borrowed</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-icon indigo">📖</div>
+        <div class="stat-card-value">{{ books_total }}</div>
+        <div class="stat-card-label">Total Reads</div>
+    </div>
+</div>
+
+<!-- Student Master Details -->
+<div class="card fade-in-up" style="margin-top:1.5rem">
+    <div class="card-header">
+        <div class="card-title">Student Master Details</div>
+    </div>
+    <div class="card-body" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1rem;font-size:.9rem">
+        <div><strong>Admission Number:</strong> {{ profile.admission_number }}</div>
+        <div><strong>Application Number:</strong> {{ profile.application_number|default:"-" }}</div>
+        <div><strong>Enrollment Number:</strong> {{ profile.enrollment_number }}</div>
+        <div><strong>Roll Number:</strong> {{ profile.roll_number }}</div>
+        <div><strong>Section:</strong> {% if profile.section %}{{ profile.section.name }}{% else %}-{% endif %}</div>
+        <div><strong>Date of Birth:</strong> {% if profile.date_of_birth %}{{ profile.date_of_birth|date:"d M Y" }}{% else %}-{% endif %}</div>
+        <div><strong>Gender:</strong> {{ profile.gender|default:"-" }}</div>
+        <div><strong>Blood Group:</strong> {{ profile.blood_group|default:"-" }}</div>
+    </div>
+</div>
+
+<!-- Family and Contact Details -->
+<div class="card fade-in-up" style="margin-top:1.5rem">
+    <div class="card-header">
+        <div class="card-title">Family & Contact Details</div>
+    </div>
+    <div class="card-body" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1rem;font-size:.9rem">
+        <div><strong>Father Name:</strong> {{ profile.father_name|default:"-" }}</div>
+        <div><strong>Mother Name:</strong> {{ profile.mother_name|default:"-" }}</div>
+        <div><strong>Guardian Phone:</strong> {{ profile.guardian_phone|default:"-" }}</div>
+        <div style="grid-column:1/-1"><strong>Address Line 1:</strong> {{ profile.address_line_1|default:"-" }}</div>
+        <div style="grid-column:1/-1"><strong>Address Line 2:</strong> {{ profile.address_line_2|default:"-" }}</div>
+        <div><strong>City:</strong> {{ profile.city|default:"-" }}</div>
+        <div><strong>State:</strong> {{ profile.state|default:"-" }}</div>
+        <div><strong>Pincode:</strong> {{ profile.pincode|default:"-" }}</div>
+    </div>
+</div>
+
+<!-- Quick Links -->
+<div class="card fade-in-up" style="margin-top:1.5rem">
+    <div class="card-header">
+        <div class="card-title">Quick Links</div>
+    </div>
+    <div class="card-body">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:.75rem">
+            <a href="{% url 'my_results' %}" class="quick-action-card">
+                <div class="qa-icon">📊</div>
+                <div class="qa-label">My Results</div>
+            </a>
+            <a href="{% url 'my_fees' %}" class="quick-action-card">
+                <div class="qa-icon">💰</div>
+                <div class="qa-label">My Fees</div>
+            </a>
+            <a href="{% url 'my_timetable' %}" class="quick-action-card">
+                <div class="qa-icon">📅</div>
+                <div class="qa-label">Timetable</div>
+            </a>
+            <a href="{% url 'leave_history' %}" class="quick-action-card">
+                <div class="qa-icon">🏖</div>
+                <div class="qa-label">Leave History</div>
+            </a>
+            <a href="{% url 'my_books' %}" class="quick-action-card">
+                <div class="qa-icon">📚</div>
+                <div class="qa-label">My Books</div>
+            </a>
+            <a href="{% url 'dashboard' %}" class="quick-action-card">
+                <div class="qa-icon">🏠</div>
+                <div class="qa-label">Dashboard</div>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

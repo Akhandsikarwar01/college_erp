@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Issued Books{% endblock %}
+{% block topbar_title %}Issued Books{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in-up">
+    <div>
+        <div class="page-header-title">Issued Books</div>
+        <div class="page-header-subtitle">
+            Currently issued books
+            {% if overdue_count %}<span style="color:var(--danger);font-weight:600"> · {{ overdue_count }}
+                overdue</span>{% endif %}
+        </div>
+    </div>
+    <div style="display:flex;gap:.75rem">
+        <a href="{% url 'issue_book' %}" class="btn btn-primary">+ Issue Book</a>
+        <a href="{% url 'book_catalog' %}" class="btn btn-outline">Catalog</a>
+    </div>
+</div>
+
+{% if issues %}
+<div class="table-wrapper fade-in-up">
+    <table class="erp-table">
+        <thead>
+            <tr>
+                <th>Book</th>
+                <th>Borrower</th>
+                <th>Issue Date</th>
+                <th>Due Date</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for i in issues %}
+            <tr{% if i.is_overdue %} style="background:var(--danger-bg)" {% endif %}>
+                <td class="fw-semibold">{{ i.book.title }}</td>
+                <td>{{ i.borrower.full_name }}</td>
+                <td class="text-sm">{{ i.issue_date|date:"d M Y" }}</td>
+                <td class="text-sm {% if i.is_overdue %}fw-semibold{% endif %}"
+                    style="{% if i.is_overdue %}color:var(--danger){% endif %}">
+                    {{ i.due_date|date:"d M Y" }}
+                    {% if i.is_overdue %} ⚠{% endif %}
+                </td>
+                <td>
+                    <span class="status-badge {% if i.is_overdue %}locked{% else %}open{% endif %}">
+                        {% if i.is_overdue %}Overdue{% else %}Issued{% endif %}
+                    </span>
+                </td>
+                <td>
+                    <form method="post" action="{% url 'return_book' i.pk %}" style="display:inline"
+                        onsubmit="return confirm('Mark as returned?')">
+                        {% csrf_token %}
+                        <button class="btn btn-sm btn-success">Return</button>
+                    </form>
+                </td>
+                </tr>
+                {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-info fade-in-up">📖 No books currently issued.</div>
+{% endif %}
+{% endblock %}

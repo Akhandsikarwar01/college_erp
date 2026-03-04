@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Leave History{% endblock %}
+{% block topbar_title %}Leave History{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in-up">
+    <div>
+        <div class="page-header-title">My Leave History</div>
+        <div class="page-header-subtitle">Track your leave applications</div>
+    </div>
+    <a href="{% url 'apply_leave' %}" class="btn btn-primary">+ Apply Leave</a>
+</div>
+
+{% if applications %}
+<div class="table-wrapper fade-in-up">
+    <table class="erp-table">
+        <thead>
+            <tr>
+                <th>Type</th>
+                <th>From</th>
+                <th>To</th>
+                <th>Days</th>
+                <th>Status</th>
+                <th>Reviewed By</th>
+                <th>Remarks</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for app in applications %}
+            <tr>
+                <td class="fw-semibold">{{ app.leave_type.name }}</td>
+                <td>{{ app.start_date|date:"d M Y" }}</td>
+                <td>{{ app.end_date|date:"d M Y" }}</td>
+                <td>{{ app.days }}</td>
+                <td>
+                    <span
+                        class="status-badge {% if app.status == 'APPROVED' %}open{% elif app.status == 'PENDING' %}pending{% else %}locked{% endif %}">
+                        {{ app.status }}
+                    </span>
+                </td>
+                <td class="text-muted text-sm">{{ app.reviewed_by.full_name|default:"—" }}</td>
+                <td class="text-muted text-sm">{{ app.review_remarks|default:"—" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-info fade-in-up">📋 No leave applications found.</div>
+{% endif %}
+{% endblock %}

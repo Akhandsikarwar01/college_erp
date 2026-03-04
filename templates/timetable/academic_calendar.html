@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Academic Calendar{% endblock %}
+{% block topbar_title %}Academic Calendar{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in-up">
+    <div>
+        <div class="page-header-title">Academic Calendar 🗓</div>
+        <div class="page-header-subtitle">Holidays, events, and important dates</div>
+    </div>
+</div>
+
+{% if request.user.is_erp_manager %}
+<div class="card fade-in-up" style="margin-bottom:1.5rem">
+    <div class="card-header">
+        <div class="card-title">Add Calendar Entry</div>
+    </div>
+    <div class="card-body">
+        <form method="post"
+            style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1rem;align-items:end">
+            {% csrf_token %}
+            <div class="form-group" style="margin:0">
+                <label class="form-label">Title</label>
+                <input type="text" name="title" class="form-control" required>
+            </div>
+            <div class="form-group" style="margin:0">
+                <label class="form-label">Date</label>
+                <input type="date" name="date" class="form-control" required>
+            </div>
+            <div class="form-group" style="margin:0">
+                <label class="form-label">End Date</label>
+                <input type="date" name="end_date" class="form-control">
+            </div>
+            <div class="form-group" style="margin:0">
+                <label class="form-label">Type</label>
+                <select name="calendar_type" class="form-control form-select">
+                    <option value="HOLIDAY">Holiday</option>
+                    <option value="EVENT">Event</option>
+                    <option value="EXAM">Exam Period</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">+ Add</button>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+{% if events %}
+<div class="fade-in-up">
+    {% for e in events %}
+    <div class="attendance-row">
+        <div class="attendance-row-header">
+            <div>
+                <div class="attendance-subject">{{ e.title }}</div>
+                <div class="attendance-meta">{{ e.date|date:"d M Y" }}{% if e.end_date %} – {{ e.end_date|date:"d M Y"
+                    }}{% endif %}</div>
+            </div>
+            <span
+                class="status-badge {% if e.calendar_type == 'HOLIDAY' %}locked{% elif e.calendar_type == 'EXAM' %}pending{% else %}open{% endif %}">
+                {{ e.get_calendar_type_display }}
+            </span>
+        </div>
+        {% if e.description %}<p style="font-size:.88rem;color:var(--gray-600);margin:0">{{ e.description }}</p>{% endif
+        %}
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="alert alert-info fade-in-up">🗓 No calendar entries yet.</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block title %}Debug OTPs - College ERP{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="alert alert-danger">
+                <strong>⚠️ Development Only!</strong> This page shows OTP codes for testing purposes. Keep it secure and remove in production!
+            </div>
+
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">🔐 Recent OTPs</h5>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-striped mb-0">
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>OTP Code</th>
+                                <th>Created At</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for otp in otps %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ otp.user.username }}</strong><br>
+                                        <small class="text-muted">{{ otp.user.get_role_display }}</small>
+                                    </td>
+                                    <td>
+                                        <code class="fs-5">{{ otp.code }}</code>
+                                    </td>
+                                    <td>
+                                        {{ otp.created_at|date:"Y-m-d H:i:s" }}
+                                    </td>
+                                    <td>
+                                        {% if otp.is_expired %}
+                                            <span class="badge bg-danger">Expired</span>
+                                        {% else %}
+                                            <span class="badge bg-success">Valid</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary" onclick="copyToClipboard('{{ otp.code }}')">
+                                            Copy OTP
+                                        </button>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-4">
+                                        No OTPs found
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="mt-4 alert alert-info">
+                <h6><strong>How to use:</strong></h6>
+                <ol>
+                    <li>Register a new account</li>
+                    <li>Look for the OTP code in this list</li>
+                    <li>Copy the code and paste it in the OTP verification form</li>
+                    <li>Continue with account setup</li>
+                </ol>
+            </div>
+
+            <div class="d-flex gap-2 mt-3">
+                <a href="{% url 'user_status' %}" class="btn btn-outline-primary">Back to Status</a>
+                <button class="btn btn-outline-secondary" onclick="location.reload()">Refresh</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        alert('OTP copied: ' + text);
+    });
+}
+</script>
+
+<style>
+    code {
+        background: #f5f5f5;
+        padding: 0.5em;
+        border-radius: 4px;
+    }
+</style>
+{% endblock %}

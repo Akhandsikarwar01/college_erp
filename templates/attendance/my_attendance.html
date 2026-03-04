@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}My Attendance{% endblock %}
+{% block topbar_title %}My Attendance{% endblock %}
+
+{% block content %}
+<div class="card" style="margin-bottom:1rem;">
+  <div class="card-body" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;">
+    <div><strong>Total Classes:</strong> {{ total }}</div>
+    <div><strong>Present:</strong> {{ present }}</div>
+    <div><strong>Absent:</strong> {{ absent }}</div>
+    <div><strong>Attendance %:</strong> {{ percentage }}%</div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:1rem;">
+  <div class="card-header"><strong>Subject-wise Attendance</strong></div>
+  <div class="card-body" style="overflow:auto;">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Subject</th>
+          <th>Total</th>
+          <th>Present</th>
+          <th>Absent</th>
+          <th>Percentage</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in subject_attendance %}
+          <tr>
+            <td>{{ row.subject }}</td>
+            <td>{{ row.total }}</td>
+            <td>{{ row.present }}</td>
+            <td>{{ row.absent }}</td>
+            <td>{{ row.percentage }}%</td>
+            <td>
+              {% if row.is_low %}
+                <span class="badge badge-danger">Below 75%</span>
+              {% else %}
+                <span class="badge badge-success">Good</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="6">No attendance records available yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><strong>Recent Attendance Records</strong></div>
+  <div class="card-body" style="overflow:auto;">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Subject</th>
+          <th>Teacher</th>
+          <th>Marked At</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for record in records %}
+          <tr>
+            <td>{{ record.session.date }}</td>
+            <td>{{ record.session.teacher_assignment.subject.name }}</td>
+            <td>{{ record.session.teacher_assignment.teacher.user.full_name }}</td>
+            <td>{{ record.marked_at|date:"j M Y, g:i A" }}</td>
+            <td>
+              {% if record.is_present %}
+                <span class="badge badge-success">Present</span>
+              {% else %}
+                <span class="badge badge-danger">Absent</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="5">No attendance records found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

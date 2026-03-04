@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Apply for Leave{% endblock %}
+{% block topbar_title %}Apply Leave{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in-up">
+    <div>
+        <div class="page-header-title">Apply for Leave</div>
+        <div class="page-header-subtitle">Submit a leave request</div>
+    </div>
+    <a href="{% url 'leave_history' %}" class="btn btn-outline">My History →</a>
+</div>
+
+<div class="card fade-in-up" style="max-width:540px">
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label">Leave Type</label>
+                <select name="leave_type" class="form-control form-select" required>
+                    <option value="">Select type…</option>
+                    {% for t in leave_types %}
+                    <option value="{{ t.pk }}">{{ t.name }} (max {{ t.max_days_per_year }} days/year)</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+                <div class="form-group">
+                    <label class="form-label">From Date</label>
+                    <input type="date" name="start_date" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">To Date</label>
+                    <input type="date" name="end_date" class="form-control" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Reason</label>
+                <textarea name="reason" class="form-control" rows="4" required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary btn-full">Submit Application</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

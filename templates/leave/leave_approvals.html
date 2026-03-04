@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Leave Approvals{% endblock %}
+{% block topbar_title %}Leave Approvals{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in-up">
+    <div>
+        <div class="page-header-title">Leave Approvals</div>
+        <div class="page-header-subtitle">Review and manage leave applications</div>
+    </div>
+</div>
+
+{% if pending %}
+<div class="card fade-in-up" style="margin-bottom:1.5rem;border-color:var(--warning)">
+    <div class="card-header" style="background:var(--warning-bg)">
+        <div class="card-title" style="color:#92400e">⏳ Pending ({{ pending|length }})</div>
+    </div>
+    <div class="table-wrapper" style="border:none;border-radius:0">
+        <table class="erp-table">
+            <thead>
+                <tr>
+                    <th>Applicant</th>
+                    <th>Role</th>
+                    <th>Type</th>
+                    <th>From – To</th>
+                    <th>Days</th>
+                    <th>Reason</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for app in pending %}
+                <tr>
+                    <td class="fw-semibold">{{ app.applicant.full_name }}</td>
+                    <td><span class="status-badge open">{{ app.applicant.get_role_display }}</span></td>
+                    <td>{{ app.leave_type.name }}</td>
+                    <td class="text-sm">{{ app.start_date|date:"d M" }} – {{ app.end_date|date:"d M Y" }}</td>
+                    <td>{{ app.days }}</td>
+                    <td class="text-muted text-sm">{{ app.reason|truncatewords:10 }}</td>
+                    <td>
+                        <form method="post" action="{% url 'approve_leave' app.pk %}"
+                            style="display:inline-flex;gap:.5rem">
+                            {% csrf_token %}
+                            <input type="hidden" name="remarks" value="">
+                            <button type="submit" name="action" value="approve"
+                                class="btn btn-sm btn-success">✅</button>
+                            <button type="submit" name="action" value="reject" class="btn btn-sm btn-danger">❌</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info fade-in-up">✅ No pending leave applications.</div>
+{% endif %}
+
+{% if reviewed %}
+<div class="card fade-in-up">
+    <div class="card-header">
+        <div class="card-title">Recently Reviewed</div>
+    </div>
+    <div class="table-wrapper" style="border:none;border-radius:0">
+        <table class="erp-table">
+            <thead>
+                <tr>
+                    <th>Applicant</th>
+                    <th>Type</th>
+                    <th>Dates</th>
+                    <th>Days</th>
+                    <th>Status</th>
+                    <th>Reviewed By</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for app in reviewed|slice:":20" %}
+                <tr>
+                    <td class="fw-semibold">{{ app.applicant.full_name }}</td>
+                    <td>{{ app.leave_type.name }}</td>
+                    <td class="text-sm">{{ app.start_date|date:"d M" }} – {{ app.end_date|date:"d M Y" }}</td>
+                    <td>{{ app.days }}</td>
+                    <td>
+                        <span class="status-badge {% if app.status == 'APPROVED' %}open{% else %}locked{% endif %}">
+                            {{ app.status }}
+                        </span>
+                    </td>
+                    <td class="text-muted text-sm">{{ app.reviewed_by.full_name|default:"—" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Parent Portal - Dashboard{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="row mb-4">
+    <div class="col-md-8">
+      <h1 class="h2">Welcome, {{ parent_user.first_name }}! 👋</h1>
+      <p class="text-muted">Parent Portal Dashboard</p>
+    </div>
+    <div class="col-md-4 text-end">
+      <form method="POST" action="{% url 'logout' %}" style="display: inline;">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-outline-danger btn-sm">Logout</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="row mb-4" style="margin-bottom: 2rem !important;">
+    <div class="col-md-3">
+      <div class="card border-0 bg-light">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div style="flex: 1;">
+              <div class="text-muted small">Total Children</div>
+              <div style="font-size: 2rem; font-weight: bold; color: #3b82f6;">{{ total_children }}</div>
+            </div>
+            <div style="font-size: 3rem; opacity: 0.3;">👨‍👩‍👧</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card border-0 bg-light">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div style="flex: 1;">
+              <div class="text-muted small">Pending Leaves</div>
+              <div style="font-size: 2rem; font-weight: bold; color: #f59e0b;">{{ total_pending_leaves }}</div>
+            </div>
+            <div style="font-size: 3rem; opacity: 0.3;">📋</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card border-0 bg-light">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div style="flex: 1;">
+              <div class="text-muted small">Pending Fees</div>
+              <div style="font-size: 1.5rem; font-weight: bold; color: #ef4444;">₹{{ total_pending_fees|floatformat:0 }}</div>
+            </div>
+            <div style="font-size: 3rem; opacity: 0.3;">💰</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card border-0 bg-light">
+        <div class="card-body">
+          <div class="text-center">
+            <div class="text-muted small">Quick Access</div>
+            <a href="#children-list" class="btn btn-sm btn-primary mt-2" style="font-size: 0.8rem;">View Children</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Children List -->
+  <div id="children-list">
+    <h3 class="h4 mb-3">Your Children's Progress</h3>
+    
+    {% if children %}
+      <div class="row">
+        {% for child in children %}
+          <div class="col-md-6 mb-3">
+            <div class="card border-0 shadow-sm">
+              <div class="card-header bg-white border-bottom">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div>
+                    <h5 class="mb-1">{{ child.user.full_name }}</h5>
+                    <small class="text-muted">
+                      📚 {{ child.section }} | 📍 {{ child.profile.admission_number }}
+                    </small>
+                  </div>
+                </div>
+              </div>
+              <div class="card-body">
+                <!-- Attendance -->
+                <div class="mb-3">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="small text-muted">Attendance</span>
+                    <span class="badge" style="background-color: {% if child.attendance_percentage >= 75 %}#10b981{% else %}#ef4444{% endif %};">
+                      {{ child.attendance_percentage }}%
+                    </span>
+                  </div>
+                  <div class="progress" style="height: 6px;">
+                    <div class="progress-bar" style="width: {{ child.attendance_percentage }}%; background-color: {% if child.attendance_percentage >= 75 %}#10b981{% else %}#ef4444{% endif %};"></div>
+                  </div>
+                </div>
+
+                <!-- Fees -->
+                <div class="mb-3">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="small text-muted">Pending Fees</span>
+                    <span class="badge bg-danger">₹{{ child.pending_fees|floatformat:0 }}</span>
+                  </div>
+                </div>
+
+                <!-- Leaves -->
+                <div class="mb-3">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="small text-muted">Pending Leaves</span>
+                    <span class="badge bg-warning">{{ child.pending_leaves }}</span>
+                  </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="d-grid gap-2 mt-4">
+                  <a href="{% url 'parent_child_attendance' child.profile.id %}" class="btn btn-sm btn-outline-primary">
+                    📊 Attendance Details
+                  </a>
+                  <a href="{% url 'parent_child_fees' child.profile.id %}" class="btn btn-sm btn-outline-success">
+                    💳 Fee Details
+                  </a>
+                  <a href="{% url 'parent_child_leaves' child.profile.id %}" class="btn btn-sm btn-outline-info">
+                    📋 Leave History
+                  </a>
+                  <a href="{% url 'parent_child_profile' child.profile.id %}" class="btn btn-sm btn-outline-secondary">
+                    👤 Profile Details
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="alert alert-info">
+        <strong>No children linked yet.</strong> Please contact the school administration to link your children to your account.
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Info Section -->
+  <div class="mt-5 p-4 bg-light rounded">
+    <h5 class="mb-3">📌 How to Use</h5>
+    <ul class="mb-0">
+      <li>View your children's real-time attendance percentages</li>
+      <li>Track pending fee payments and due dates</li>
+      <li>Monitor leave applications and approvals</li>
+      <li>Access student profile and academic details</li>
+      <li>Contact your child's school for support</li>
+    </ul>
+  </div>
+</div>
+{% endblock %}

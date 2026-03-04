@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block title %}Account Status - College ERP{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">⏳ Account Status</h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-4">
+                        {% if status == 'pending' %}
+                            <i class="fas fa-hourglass-half fa-4x text-warning mb-3"></i>
+                            <h4>Approval Pending</h4>
+                            <p class="text-muted">Your {{ role }} account is awaiting approval from the ERP Manager.</p>
+                        {% elif status == 'profile_setup' %}
+                            <i class="fas fa-user-clock fa-4x text-info mb-3"></i>
+                            <h4>Profile Setup In Progress</h4>
+                            <p class="text-muted">The ERP Manager is setting up your profile. Please wait.</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="alert alert-info">
+                        <strong>What happens next?</strong>
+                        <ul class="mt-2 text-start">
+                            <li>The ERP Manager will review your registration</li>
+                            <li>Your profile will be set up with necessary details</li>
+                            <li>You will receive an email notification once approved</li>
+                            <li>You can then access all system features</li>
+                        </ul>
+                    </div>
+
+                    <hr>
+
+                    <div class="mb-3">
+                        <p class="small text-muted">
+                            <strong>Registered Email:</strong> {{ request.user.email }}
+                        </p>
+                        <p class="small text-muted">
+                            <strong>Role:</strong> {{ request.user.get_role_display }}
+                        </p>
+                        <p class="small text-muted">
+                            <strong>Pending Since:</strong> {{ request.user.date_joined|date:"j M Y, g:i A" }}
+                        </p>
+                    </div>
+
+                    <div class="my-4">
+                        <form method="post" action="{% url 'logout' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-secondary">Logout</button>
+                        </form>
+                    </div>
+
+                    <hr>
+
+                    <div class="alert alert-light">
+                        <p class="small mb-0">
+                            <strong>For Demo Access:</strong><br>
+                            Login with: <code>erp_admin</code> / <code>admin123</code> (Manager)
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}

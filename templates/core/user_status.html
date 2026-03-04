@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+
+{% block title %}Account Status - College ERP{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">📋 Account Status</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <p><strong>Username:</strong> {{ user.username }}</p>
+                            <p><strong>Full Name:</strong> {{ user.full_name }}</p>
+                            <p><strong>Role:</strong> {{ user.get_role_display }}</p>
+                            <p><strong>Email:</strong> {{ user.email }}</p>
+                            {% if user.mobile_number %}
+                                <p><strong>Phone:</strong> {{ user.mobile_number }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <p>
+                                <strong>Email Verified:</strong>
+                                {% if is_verified %}
+                                    <span class="badge bg-success">✓ Yes</span>
+                                {% else %}
+                                    <span class="badge bg-danger">✗ No</span>
+                                {% endif %}
+                            </p>
+                            <p>
+                                <strong>Account Approved:</strong>
+                                {% if is_approved %}
+                                    <span class="badge bg-success">✓ Yes</span>
+                                {% else %}
+                                    <span class="badge bg-warning">⏳ Pending</span>
+                                {% endif %}
+                            </p>
+                            <p>
+                                <strong>Account Active:</strong>
+                                {% if is_active %}
+                                    <span class="badge bg-success">✓ Yes</span>
+                                {% else %}
+                                    <span class="badge bg-danger">✗ No</span>
+                                {% endif %}
+                            </p>
+                            {% if user.is_student and has_student_profile %}
+                                <p>
+                                    <strong>Student Profile:</strong>
+                                    <span class="badge bg-success">✓ Created</span>
+                                </p>
+                            {% elif user.is_teacher and has_teacher_profile %}
+                                <p>
+                                    <strong>Teacher Profile:</strong>
+                                    <span class="badge bg-success">✓ Created</span>
+                                </p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <div class="alert alert-info">
+                        <h6><strong>Current Status: {{ status }}</strong></h6>
+                        <p class="mb-0">{{ message }}</p>
+                    </div>
+
+                    <hr>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>📝 Next Steps:</h6>
+                            <ul class="small">
+                                {% if not is_verified %}
+                                    <li>Check your email for OTP code</li>
+                                    <li>Visit <a href="{% url 'verify_otp' %}">Verify OTP</a> page</li>
+                                    <li><a href="{% url 'debug_otps' %}">Need to see OTP?</a> (dev only)</li>
+                                {% elif not is_approved %}
+                                    <li>Wait for ERP Manager approval</li>
+                                    <li>Check your email for approval notification</li>
+                                    <li>Re-login once approved</li>
+                                {% elif user.is_student and not has_student_profile %}
+                                    <li>Your profile is being set up</li>
+                                    <li>The ERP Manager will assign you to a section</li>
+                                    <li>Refresh the page after approval</li>
+                                {% elif user.is_teacher and not has_teacher_profile %}
+                                    <li>Your profile is being set up</li>
+                                    <li>The ERP Manager will assign your details</li>
+                                    <li>Refresh the page after setup</li>
+                                {% else %}
+                                    <li>You can access all system features</li>
+                                    <li>Go to <a href="{% url 'dashboard' %}">Dashboard</a></li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>💡 Quick Tips:</h6>
+                            <ul class="small">
+                                <li>Check spam folder for emails</li>
+                                <li>OTP expires in 5 minutes</li>
+                                <li>You can request a new OTP during registration</li>
+                                <li>Contact support if you're stuck</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <div class="d-flex gap-2">
+                        <form method="post" action="{% url 'logout' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-danger btn-sm">Logout</button>
+                        </form>
+                        <a href="{% url 'dashboard' %}" class="btn btn-outline-primary btn-sm">Dashboard</a>
+                        <a href="{% url 'debug_otps' %}" class="btn btn-outline-secondary btn-sm">View OTPs (Dev)</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

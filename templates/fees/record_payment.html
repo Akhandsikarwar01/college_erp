@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Record Payment{% endblock %}
+{% block topbar_title %}Record Payment{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in-up">
+    <div>
+        <div class="page-header-title">Record Payment</div>
+        <div class="page-header-subtitle">{{ student_fee.student.user.full_name }} · Semester {{
+            student_fee.semester.number }}</div>
+    </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;max-width:700px" class="fade-in-up">
+    <div class="card">
+        <div class="card-body" style="text-align:center">
+            <div
+                style="font-size:.8rem;color:var(--gray-500);text-transform:uppercase;font-weight:600;margin-bottom:.25rem">
+                Total Fee</div>
+            <div style="font-size:2rem;font-weight:700;color:var(--gray-900)">₹{{ student_fee.total_amount|floatformat:0
+                }}</div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body" style="text-align:center">
+            <div
+                style="font-size:.8rem;color:var(--gray-500);text-transform:uppercase;font-weight:600;margin-bottom:.25rem">
+                Balance Due</div>
+            <div style="font-size:2rem;font-weight:700;color:var(--danger)">₹{{ student_fee.balance|floatformat:0 }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card fade-in-up" style="max-width:500px;margin-top:1.5rem">
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label">Amount (₹)</label>
+                <input type="number" name="amount" class="form-control" step="0.01" min="1"
+                    max="{{ student_fee.balance }}" value="{{ student_fee.balance }}" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Payment Method</label>
+                <select name="method" class="form-control form-select">
+                    <option value="CASH">Cash</option>
+                    <option value="ONLINE">Online Transfer</option>
+                    <option value="UPI">UPI</option>
+                    <option value="CHEQUE">Cheque</option>
+                    <option value="DD">Demand Draft</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Remarks</label>
+                <input type="text" name="remarks" class="form-control" placeholder="Optional">
+            </div>
+            <button type="submit" class="btn btn-success btn-full">💳 Record Payment</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

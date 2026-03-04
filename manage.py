@@ -2,10 +2,33 @@
 """Django's command-line utility for administrative tasks."""
 import os
 import sys
+from pathlib import Path
+
+
+def _prefer_project_venv_python() -> None:
+    """Re-exec with project venv Python when script is run with system Python."""
+    project_root = Path(__file__).resolve().parent
+    candidate_paths = [
+        project_root / ".venv" / "bin" / "python",
+        project_root.parent / ".venv" / "bin" / "python",
+        project_root.parent.parent / ".venv" / "bin" / "python",
+        project_root.parent.parent.parent / ".venv" / "bin" / "python",
+    ]
+
+    venv_python = next((path for path in candidate_paths if path.exists()), None)
+    if venv_python is None:
+        return
+
+    current_python = Path(sys.executable)
+    if current_python == venv_python:
+        return
+
+    os.execv(str(venv_python), [str(venv_python), *sys.argv])
 
 
 def main():
     """Run administrative tasks."""
+    _prefer_project_venv_python()
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.dev')
     try:
         from django.core.management import execute_from_command_line

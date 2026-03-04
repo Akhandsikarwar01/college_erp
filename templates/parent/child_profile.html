@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ child_user.full_name }} - Profile{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="row mb-4">
+    <div class="col-md-8">
+      <h1 class="h2">{{ child_user.full_name }} - Profile Details 👤</h1>
+      <p class="text-muted">Student information and academic details</p>
+    </div>
+    <div class="col-md-4 text-end">
+      <a href="{% url 'parent_dashboard' %}" class="btn btn-outline-secondary btn-sm">← Back to Dashboard</a>
+    </div>
+  </div>
+
+  <!-- Basic Info Card -->
+  <div class="card border-0 mb-4">
+    <div class="card-header bg-white border-bottom">
+      <h5 class="mb-0">📌 Basic Information</h5>
+    </div>
+    <div class="card-body">
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <small class="text-muted d-block">First Name</small>
+          <p class="mb-3">{{ child_user.first_name }}</p>
+        </div>
+        <div class="col-md-6">
+          <small class="text-muted d-block">Last Name</small>
+          <p class="mb-3">{{ child_user.last_name }}</p>
+        </div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <small class="text-muted d-block">Email</small>
+          <p class="mb-3"><a href="mailto:{{ child_user.email }}">{{ child_user.email }}</a></p>
+        </div>
+        <div class="col-md-6">
+          <small class="text-muted d-block">Phone</small>
+          <p class="mb-3">{{ child_user.mobile_number|default:"-" }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Academic Info Card -->
+  <div class="card border-0 mb-4">
+    <div class="card-header bg-white border-bottom">
+      <h5 class="mb-0">🎓 Academic Information</h5>
+    </div>
+    <div class="card-body">
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <small class="text-muted d-block">Section</small>
+          <p class="mb-3">{{ child_profile.section.name|default:"-" }}</p>
+        </div>
+        <div class="col-md-6">
+          <small class="text-muted d-block">Roll Number</small>
+          <p class="mb-3">{{ child_profile.roll_number|default:"-" }}</p>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-4">
+          <small class="text-muted d-block">Admission Number</small>
+          <p>{{ child_profile.admission_number }}</p>
+        </div>
+        <div class="col-md-4">
+          <small class="text-muted d-block">Enrollment Number</small>
+          <p>{{ child_profile.enrollment_number }}</p>
+        </div>
+        <div class="col-md-4">
+          <small class="text-muted d-block">Application Number</small>
+          <p>{{ child_profile.application_number|default:"-" }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Personal Details Card -->
+  <div class="card border-0 mb-4">
+    <div class="card-header bg-white border-bottom">
+      <h5 class="mb-0">🧑 Personal Details</h5>
+    </div>
+    <div class="card-body">
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <small class="text-muted d-block">Date of Birth</small>
+          <p class="mb-3">{{ child_profile.date_of_birth|date:"d M Y"|default:"-" }}</p>
+        </div>
+        <div class="col-md-6">
+          <small class="text-muted d-block">Gender</small>
+          <p class="mb-3">{{ child_profile.gender|default:"-" }}</p>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-6">
+          <small class="text-muted d-block">Blood Group</small>
+          <p>{{ child_profile.blood_group|upper|default:"-" }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Family Information Card -->
+  <div class="card border-0 mb-4">
+    <div class="card-header bg-white border-bottom">
+      <h5 class="mb-0">👨‍👩‍👧 Family Information</h5>
+    </div>
+    <div class="card-body">
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <small class="text-muted d-block">Father's Name</small>
+          <p class="mb-3">{{ child_profile.father_name|default:"-" }}</p>
+        </div>
+        <div class="col-md-6">
+          <small class="text-muted d-block">Mother's Name</small>
+          <p class="mb-3">{{ child_profile.mother_name|default:"-" }}</p>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-12">
+          <small class="text-muted d-block">Guardian Phone</small>
+          <p>
+            {% if child_profile.guardian_phone %}
+              <a href="tel:{{ child_profile.guardian_phone }}">{{ child_profile.guardian_phone }}</a>
+            {% else %}
+              -
+            {% endif %}
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Address Card -->
+  <div class="card border-0 mb-4">
+    <div class="card-header bg-white border-bottom">
+      <h5 class="mb-0">📍 Address</h5>
+    </div>
+    <div class="card-body">
+      <div class="row mb-3">
+        <div class="col-md-12">
+          <small class="text-muted d-block">Address Line 1</small>
+          <p class="mb-3">{{ child_profile.address_line_1|default:"-" }}</p>
+        </div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-md-12">
+          <small class="text-muted d-block">Address Line 2</small>
+          <p class="mb-3">{{ child_profile.address_line_2|default:"-" }}</p>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-4">
+          <small class="text-muted d-block">City</small>
+          <p class="mb-3">{{ child_profile.city|default:"-" }}</p>
+        </div>
+        <div class="col-md-4">
+          <small class="text-muted d-block">State</small>
+          <p class="mb-3">{{ child_profile.state|default:"-" }}</p>
+        </div>
+        <div class="col-md-4">
+          <small class="text-muted d-block">Pincode</small>
+          <p class="mb-3">{{ child_profile.pincode|default:"-" }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Account Status -->
+  <div class="card border-0">
+    <div class="card-header bg-white border-bottom">
+      <h5 class="mb-0">🔐 Account Status</h5>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-6">
+          <small class="text-muted d-block">Account Created</small>
+          <p>{{ child_user.date_joined|date:"d M Y, H:i" }}</p>
+        </div>
+        <div class="col-md-6">
+          <small class="text-muted d-block">Status</small>
+          <p>
+            {% if child_user.is_active %}
+              <span class="badge bg-success">Active</span>
+            {% else %}
+              <span class="badge bg-danger">Inactive</span>
+            {% endif %}
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Info Box -->
+  <div class="mt-4 p-3 bg-light rounded text-muted small">
+    <strong>📌 Note:</strong> This information is maintained by the school. If any details are incorrect, please contact the school office to request corrections.
+  </div>
+</div>
+{% endblock %}

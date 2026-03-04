@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import FacultyDepartment, TeacherMaster, TeacherAssignment
+from .models import FacultyDepartment, TeacherMaster, TeacherAssignment, SectionIncharge
 
 
 @admin.register(FacultyDepartment)
@@ -29,3 +29,10 @@ class TeacherAssignmentAdmin(admin.ModelAdmin):
     list_filter   = ("subject__semester__course", "section__class_obj__course")
     search_fields = ("teacher__user__username", "subject__name", "section__name")
     autocomplete_fields = []
+
+
+@admin.register(SectionIncharge)
+class SectionInchargeAdmin(admin.ModelAdmin):
+    list_display = ("section", "teacher", "assigned_by", "created_at")
+    list_filter = ("section__class_obj__course",)
+    search_fields = ("section__name", "teacher__user__username", "teacher__user__first_name")

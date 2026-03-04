@@ -1,5 +1,5 @@
 """
-Account management views: signup (student/teacher), login, OTP, CSV import.
+Account management views: login, OTP verification, and internal account provisioning.
 """
 
 import csv
@@ -11,6 +11,7 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
+from django.core.mail import EmailMessage
 from django.db import transaction
 from django.shortcuts import render, redirect
 
@@ -28,123 +29,11 @@ REQUIRED_CSV_HEADERS = {"username", "password", "roll_number", "admission_number
 # ──────────────────────────────────────────────────────────────────────────────
 
 def signup_view(request):
-    if request.user.is_authenticated:
-        return redirect("dashboard")
-
-    if request.method == "POST":
-        first_name        = request.POST.get("first_name", "").strip()
-        last_name         = request.POST.get("last_name", "").strip()
-        role              = request.POST.get("role", "").strip()
-        username          = request.POST.get("username", "").strip().lower()
-        mobile            = request.POST.get("mobile", "").strip()
-        email             = request.POST.get("email", "").strip().lower()
-        password          = request.POST.get("password", "")
-        # Student-only
-        admission_number  = request.POST.get("admission_number", "").strip()
-        enrollment_number = request.POST.get("enrollment_number", "").strip()
-
-        # ── Basic validation ──────────────────────────────────────────────────
-        base_fields = [first_name, last_name, role, username, mobile, email, password]
-        if not all(base_fields):
-            messages.error(request, "All fields are required.")
-            return render(request, "accounts/signup.html", {"post": request.POST})
-
-        if role == Role.STUDENT and not (admission_number and enrollment_number):
-            messages.error(request, "Admission number and enrollment number are required.")
-            return render(request, "accounts/signup.html", {"post": request.POST})
-
-        # ── Clean stale unverified accounts ──────────────────────────────────
-        User.objects.filter(mobile_number=mobile, is_verified=False).delete()
-        User.objects.filter(email=email, is_verified=False).delete()
-
-        if User.objects.filter(mobile_number=mobile).exists():
-            messages.error(request, "Mobile number already registered.")
-            return render(request, "accounts/signup.html", {"post": request.POST})
-
-        if User.objects.filter(email=email).exists():
-            messages.error(request, "Email already registered.")
-            return render(request, "accounts/signup.html", {"post": request.POST})
-
-        # ── Role-specific checks ──────────────────────────────────────────────
-        teacher_master = None
-        if role == Role.TEACHER:
-            teacher_master = TeacherMaster.objects.filter(
-                teacher_code=username, is_registered=False
-            ).first()
-            if not teacher_master:
-                messages.error(request, "Invalid or already-used teacher code.")
-                return render(request, "accounts/signup.html", {"post": request.POST})
-
-        elif role == Role.STUDENT:
-            # Check uniqueness of admission/enrollment numbers
-            if StudentProfile.objects.filter(admission_number=admission_number).exists():
-                messages.error(request, "Admission number already registered.")
-                return render(request, "accounts/signup.html", {"post": request.POST})
-            if StudentProfile.objects.filter(enrollment_number=enrollment_number).exists():
-                messages.error(request, "Enrollment number already registered.")
-                return render(request, "accounts/signup.html", {"post": request.POST})
-
-        else:
-            messages.error(request, "Invalid role selected.")
-            return render(request, "accounts/signup.html", {"post": request.POST})
-
-        # ── Create user ───────────────────────────────────────────────────────
-        try:
-            with transaction.atomic():
-                user = User.objects.create_user(
-                    username=username,
-                    password=password,
-                    first_name=first_name,
-                    last_name=last_name,
-                    mobile_number=mobile,
-                    email=email,
-                    role=role,
-                    is_active=False,
-                    is_verified=False,
-                    is_approved=False,
-                )
-
-                if role == Role.TEACHER:
-                    teacher_master.is_registered = True
-                    teacher_master.save()
-                    TeacherProfile.objects.create(
-                        user=user,
-                        employee_id=username,
-                    )
-
-                # Student profile is completed after admin assigns a section.
-                # We store admission/enrollment numbers on the session for now,
-                # and attach them during the admin approval / profile-setup flow.
-                if role == Role.STUDENT:
-                    # Store in session until admin approves & assigns section
-                    request.session["pending_admission"]  = admission_number
-                    request.session["pending_enrollment"] = enrollment_number
-
-                otp_code = OTP.generate_otp()
-                OTP.objects.create(user=user, code=otp_code)
-
-                send_mail(
-                    subject="Your College ERP Verification OTP",
-                    message=(
-                        f"Hello {first_name},\n\n"
-                        f"Your OTP for College ERP is: {otp_code}\n\n"
-                        "This OTP expires in 5 minutes.\n\n"
-                        "If you did not register, please ignore this email."
-                    ),
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[email],
-                    fail_silently=False,
-                )
-
-                request.session["pending_user_id"] = user.id
-                messages.success(request, "OTP sent to your email.")
-                return redirect("verify_otp")
-
-        except Exception as exc:
-            messages.error(request, f"Registration failed: {exc}")
-            return render(request, "accounts/signup.html", {"post": request.POST})
-
-    return render(request, "accounts/signup.html")
+    messages.error(
+        request,
+        "Public signup is disabled. Student accounts are created by Admission Team and teacher accounts by ERP Manager."
+    )
+    return redirect("login")
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -154,8 +43,8 @@ def signup_view(request):
 def verify_otp_view(request):
     user_id = request.session.get("pending_user_id")
     if not user_id:
-        messages.error(request, "Session expired. Please register again.")
-        return redirect("signup")
+        messages.error(request, "Session expired. Please sign in again.")
+        return redirect("login")
 
     if request.method == "POST":
         entered = request.POST.get("otp", "").strip()
@@ -164,17 +53,17 @@ def verify_otp_view(request):
             user = User.objects.get(id=user_id)
         except User.DoesNotExist:
             messages.error(request, "User not found.")
-            return redirect("signup")
+            return redirect("login")
 
         otp_obj = OTP.objects.filter(user=user).order_by("-created_at").first()
 
         if not otp_obj:
-            messages.error(request, "OTP not found. Please register again.")
-            return redirect("signup")
+            messages.error(request, "OTP not found. Please sign in again.")
+            return redirect("login")
 
         if otp_obj.is_expired():
-            messages.error(request, "OTP expired. Please register again.")
-            return redirect("signup")
+            messages.error(request, "OTP expired. Please sign in again.")
+            return redirect("login")
 
         if otp_obj.code != entered:
             messages.error(request, "Incorrect OTP. Please try again.")
@@ -243,7 +132,7 @@ def login_view(request):
 
 @login_required
 def import_students_csv(request):
-    if not (request.user.is_erp_manager):
+    if not (request.user.is_erp_manager or request.user.is_admission_team):
         messages.error(request, "Access denied.")
         return redirect("dashboard")
 
@@ -302,6 +191,7 @@ def import_students_csv(request):
                         user=u, section=section,
                         roll_number=roll,
                         admission_number=adm,
+                        application_number=f"APP-{adm}",
                         enrollment_number=enr,
                     )
                     created += 1
@@ -316,3 +206,193 @@ def import_students_csv(request):
         "programs__courses__classes__sections"
     )
     return render(request, "accounts/import_students.html", {"departments": departments})
+
+
+@login_required
+def create_student_account(request):
+    if not (request.user.is_erp_manager or request.user.is_admission_team):
+        messages.error(request, "Access denied.")
+        return redirect("dashboard")
+
+    if request.method == "POST":
+        first_name = request.POST.get("first_name", "").strip()
+        last_name = request.POST.get("last_name", "").strip()
+        email = request.POST.get("email", "").strip().lower()
+        mobile = request.POST.get("mobile", "").strip()
+        section_id = request.POST.get("section")
+        admission_number = request.POST.get("admission_number", "").strip()
+        application_number = request.POST.get("application_number", "").strip()
+        enrollment_number = request.POST.get("enrollment_number", "").strip()
+        roll_number = request.POST.get("roll_number", "").strip()
+        username = request.POST.get("username", "").strip().lower() or admission_number.lower()
+        password = request.POST.get("password", "").strip() or f"{admission_number[-6:]}@123"
+
+        father_name = request.POST.get("father_name", "").strip()
+        mother_name = request.POST.get("mother_name", "").strip()
+        date_of_birth = request.POST.get("date_of_birth") or None
+        gender = request.POST.get("gender", "").strip()
+        blood_group = request.POST.get("blood_group", "").strip()
+        address_line_1 = request.POST.get("address_line_1", "").strip()
+        address_line_2 = request.POST.get("address_line_2", "").strip()
+        city = request.POST.get("city", "").strip()
+        state = request.POST.get("state", "").strip()
+        pincode = request.POST.get("pincode", "").strip()
+        guardian_phone = request.POST.get("guardian_phone", "").strip()
+
+        if not all([first_name, last_name, email, section_id, admission_number, enrollment_number, roll_number]):
+            messages.error(request, "Required fields missing.")
+            return redirect("create_student_account")
+
+        if User.objects.filter(username=username).exists():
+            messages.error(request, "Username already exists.")
+            return redirect("create_student_account")
+
+        if User.objects.filter(email=email).exists():
+            messages.error(request, "Email already exists.")
+            return redirect("create_student_account")
+
+        if StudentProfile.objects.filter(admission_number=admission_number).exists():
+            messages.error(request, "Admission number already exists.")
+            return redirect("create_student_account")
+
+        if StudentProfile.objects.filter(enrollment_number=enrollment_number).exists():
+            messages.error(request, "Enrollment number already exists.")
+            return redirect("create_student_account")
+
+        section = Section.objects.filter(id=section_id).first()
+        if not section:
+            messages.error(request, "Invalid section selected.")
+            return redirect("create_student_account")
+
+        with transaction.atomic():
+            user = User.objects.create_user(
+                username=username,
+                password=password,
+                first_name=first_name,
+                last_name=last_name,
+                email=email,
+                mobile_number=mobile,
+                role=Role.STUDENT,
+                is_verified=True,
+                is_approved=True,
+                is_active=True,
+            )
+
+            StudentProfile.objects.create(
+                user=user,
+                section=section,
+                admission_number=admission_number,
+                application_number=application_number or f"APP-{admission_number}",
+                enrollment_number=enrollment_number,
+                roll_number=roll_number,
+                father_name=father_name,
+                mother_name=mother_name,
+                date_of_birth=date_of_birth,
+                gender=gender,
+                blood_group=blood_group,
+                address_line_1=address_line_1,
+                address_line_2=address_line_2,
+                city=city,
+                state=state,
+                pincode=pincode,
+                guardian_phone=guardian_phone,
+            )
+
+        messages.success(request, f"Student account created. Username: {username}, Password: {password}")
+        return redirect("create_student_account")
+
+    departments = Department.objects.prefetch_related("programs__courses__classes__sections")
+    return render(request, "accounts/create_student_account.html", {"departments": departments})
+
+
+@login_required
+def create_teacher_account(request):
+    if not request.user.is_erp_manager:
+        messages.error(request, "Access denied.")
+        return redirect("dashboard")
+
+    if request.method == "POST":
+        first_name = request.POST.get("first_name", "").strip()
+        last_name = request.POST.get("last_name", "").strip()
+        email = request.POST.get("email", "").strip().lower()
+        mobile = request.POST.get("mobile", "").strip()
+        employee_id = request.POST.get("employee_id", "").strip()
+        username = request.POST.get("username", "").strip().upper() or employee_id.upper()
+        password = request.POST.get("password", "").strip() or "teacher123"
+
+        if not all([first_name, last_name, email, employee_id, username]):
+            messages.error(request, "Required fields missing.")
+            return redirect("create_teacher_account")
+
+        if User.objects.filter(username=username).exists():
+            messages.error(request, "Username already exists.")
+            return redirect("create_teacher_account")
+
+        if User.objects.filter(email=email).exists():
+            messages.error(request, "Email already exists.")
+            return redirect("create_teacher_account")
+
+        with transaction.atomic():
+            user = User.objects.create_user(
+                username=username,
+                password=password,
+                first_name=first_name,
+                last_name=last_name,
+                email=email,
+                mobile_number=mobile,
+                role=Role.TEACHER,
+                is_verified=True,
+                is_approved=True,
+                is_active=True,
+            )
+            TeacherProfile.objects.create(user=user, employee_id=employee_id)
+
+        messages.success(request, f"Teacher account created. Username: {username}, Password: {password}")
+        return redirect("create_teacher_account")
+
+    return render(request, "accounts/create_teacher_account.html")
+
+
+@login_required
+def create_admission_user(request):
+    if not request.user.is_erp_manager:
+        messages.error(request, "Access denied.")
+        return redirect("dashboard")
+
+    if request.method == "POST":
+        first_name = request.POST.get("first_name", "").strip()
+        last_name = request.POST.get("last_name", "").strip()
+        email = request.POST.get("email", "").strip().lower()
+        mobile = request.POST.get("mobile", "").strip()
+        username = request.POST.get("username", "").strip().lower()
+        password = request.POST.get("password", "").strip() or "admission123"
+
+        if not all([first_name, last_name, email, username]):
+            messages.error(request, "Required fields missing.")
+            return redirect("create_admission_user")
+
+        if User.objects.filter(username=username).exists():
+            messages.error(request, "Username already exists.")
+            return redirect("create_admission_user")
+
+        if User.objects.filter(email=email).exists():
+            messages.error(request, "Email already exists.")
+            return redirect("create_admission_user")
+
+        User.objects.create_user(
+            username=username,
+            password=password,
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            mobile_number=mobile,
+            role=Role.ADMISSION_TEAM,
+            is_verified=True,
+            is_approved=True,
+            is_active=True,
+        )
+
+        messages.success(request, f"Admission Team user created. Username: {username}, Password: {password}")
+        return redirect("create_admission_user")
+
+    return render(request, "accounts/create_admission_user.html")

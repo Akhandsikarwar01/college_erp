@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Create Student Account{% endblock %}
+{% block topbar_title %}Create Student Account{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in-up">
+  <div>
+    <div class="page-header-title">Create Student Account</div>
+    <div class="page-header-subtitle">Admission Team / ERP Manager only</div>
+  </div>
+</div>
+
+<form method="post" class="card fade-in-up">
+  {% csrf_token %}
+  <div class="card-body" style="display:grid;grid-template-columns:repeat(2,minmax(240px,1fr));gap:1rem;">
+    <input class="form-control" name="first_name" placeholder="First Name" required>
+    <input class="form-control" name="last_name" placeholder="Last Name" required>
+    <input class="form-control" name="email" type="email" placeholder="Email" required>
+    <input class="form-control" name="mobile" placeholder="Mobile Number">
+    <input class="form-control" name="username" placeholder="Username (optional)">
+    <input class="form-control" name="password" placeholder="Password (optional)">
+
+    <input class="form-control" name="admission_number" placeholder="Admission Number" required>
+    <input class="form-control" name="application_number" placeholder="Application Number">
+    <input class="form-control" name="enrollment_number" placeholder="Enrollment Number" required>
+    <input class="form-control" name="roll_number" placeholder="Roll Number" required>
+
+    <select class="form-control" name="section" required>
+      <option value="">Select Section</option>
+      {% for dept in departments %}
+        {% for program in dept.programs.all %}
+          {% for course in program.courses.all %}
+            {% for cls in course.classes.all %}
+              {% for sec in cls.sections.all %}
+                <option value="{{ sec.id }}">{{ dept.code }} / {{ course.name }} / {{ cls.name }} / Section {{ sec.name }}</option>
+              {% endfor %}
+            {% endfor %}
+          {% endfor %}
+        {% endfor %}
+      {% endfor %}
+    </select>
+    <input class="form-control" name="date_of_birth" type="date" placeholder="Date of Birth">
+
+    <input class="form-control" name="father_name" placeholder="Father Name">
+    <input class="form-control" name="mother_name" placeholder="Mother Name">
+    <input class="form-control" name="guardian_phone" placeholder="Guardian Phone">
+    <input class="form-control" name="gender" placeholder="Gender">
+
+    <input class="form-control" name="blood_group" placeholder="Blood Group">
+    <input class="form-control" name="city" placeholder="City">
+    <input class="form-control" name="state" placeholder="State">
+    <input class="form-control" name="pincode" placeholder="Pincode">
+
+    <input class="form-control" name="address_line_1" placeholder="Address Line 1" style="grid-column:1/-1;">
+    <input class="form-control" name="address_line_2" placeholder="Address Line 2" style="grid-column:1/-1;">
+  </div>
+  <div class="card-footer" style="padding:1rem 1.25rem;">
+    <button type="submit" class="btn btn-primary">Create Student Account</button>
+  </div>
+</form>
+{% endblock %}

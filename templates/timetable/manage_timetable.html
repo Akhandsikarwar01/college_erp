@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Manage Timetable{% endblock %}
+{% block topbar_title %}Manage Timetable{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in-up">
+    <div>
+        <div class="page-header-title">Manage Timetable</div>
+        <div class="page-header-subtitle">Add or update timetable entries</div>
+    </div>
+    <a href="{% url 'my_timetable' %}" class="btn btn-outline">View Timetable →</a>
+</div>
+
+<div class="card fade-in-up" style="max-width:640px">
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label">Day</label>
+                <select name="day" class="form-control form-select" required>
+                    {% for num, name in days %}
+                    <option value="{{ num }}">{{ name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Time Slot</label>
+                <select name="time_slot" class="form-control form-select" required>
+                    <option value="">Select period…</option>
+                    {% for s in slots %}
+                    <option value="{{ s.pk }}">Period {{ s.slot_number }}: {{ s.start_time|time:"H:i" }}–{{
+                        s.end_time|time:"H:i" }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Section</label>
+                <select name="section" class="form-control form-select" required>
+                    <option value="">Select section…</option>
+                    {% for s in sections %}
+                    <option value="{{ s.pk }}">{{ s.name }} — {{ s.class_obj.course.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Teacher / Subject</label>
+                <select name="teacher_assignment" class="form-control form-select" required>
+                    <option value="">Select assignment…</option>
+                    {% for a in assignments %}
+                    <option value="{{ a.pk }}">{{ a.teacher.user.full_name }} — {{ a.subject.name }} ({{ a.section.name
+                        }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary btn-full">Save Entry</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

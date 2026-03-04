@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Create Event{% endblock %}
+{% block topbar_title %}Create Event{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in-up">
+    <div>
+        <div class="page-header-title">Create Event</div>
+        <div class="page-header-subtitle">Add a new event</div>
+    </div>
+</div>
+
+<div class="card fade-in-up" style="max-width:540px">
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label">Title</label>
+                <input type="text" name="title" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Description</label>
+                <textarea name="description" class="form-control" rows="4"></textarea>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+                <div class="form-group">
+                    <label class="form-label">Date</label>
+                    <input type="date" name="date" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">End Date</label>
+                    <input type="date" name="end_date" class="form-control">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Venue</label>
+                <input type="text" name="venue" class="form-control" placeholder="e.g. Auditorium">
+            </div>
+            <button type="submit" class="btn btn-primary btn-full">Create Event</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

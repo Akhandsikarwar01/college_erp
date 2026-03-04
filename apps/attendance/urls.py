@@ -15,4 +15,6 @@ urlpatterns = [
 
     # Student — scan
     path("scan/",                        views.scan_attendance,        name="scan_attendance"),
+    path("my-attendance/",              views.my_attendance,          name="my_attendance"),
+    path("section-overview/",           views.section_attendance_overview, name="section_attendance_overview"),
 ]

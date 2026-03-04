@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Add Book{% endblock %}
+{% block topbar_title %}Add Book{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in-up">
+    <div>
+        <div class="page-header-title">Add Book</div>
+        <div class="page-header-subtitle">Add a new book to the library</div>
+    </div>
+</div>
+
+<div class="card fade-in-up" style="max-width:540px">
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label">Title</label>
+                <input type="text" name="title" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Author</label>
+                <input type="text" name="author" class="form-control" required>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+                <div class="form-group">
+                    <label class="form-label">ISBN</label>
+                    <input type="text" name="isbn" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Category</label>
+                    <select name="category" class="form-control form-select">
+                        <option value="">None</option>
+                        {% for c in categories %}<option value="{{ c.pk }}">{{ c.name }}</option>{% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Publisher</label>
+                <input type="text" name="publisher" class="form-control">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Number of Copies</label>
+                <input type="number" name="total_copies" class="form-control" value="1" min="1" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-full">Add Book</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

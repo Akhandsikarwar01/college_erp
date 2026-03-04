@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}My Fees{% endblock %}
+{% block topbar_title %}My Fees{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in-up">
+    <div>
+        <div class="page-header-title">My Fees 💰</div>
+        <div class="page-header-subtitle">{{ profile.user.full_name }} · {{ profile.roll_number }}</div>
+    </div>
+</div>
+
+{% for fee in fees %}
+<div class="card fade-in-up" style="margin-bottom:1.25rem">
+    <div class="card-header">
+        <div>
+            <div class="card-title">Semester {{ fee.semester.number }} — {{ fee.semester.course.name }}</div>
+            <div style="font-size:.8rem;color:var(--gray-500);margin-top:.1rem">Due: {{ fee.due_date|date:"d M Y" }}
+            </div>
+        </div>
+        <span
+            class="status-badge {% if fee.is_paid %}open{% elif fee.paid_amount > 0 %}pending{% else %}locked{% endif %}"
+            style="font-size:.85rem;padding:.35rem 1rem">
+            {{ fee.status }}
+        </span>
+    </div>
+    <div class="card-body">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;text-align:center;margin-bottom:1rem">
+            <div>
+                <div style="font-size:.75rem;color:var(--gray-500);text-transform:uppercase;font-weight:600">Total</div>
+                <div style="font-size:1.5rem;font-weight:700">₹{{ fee.total_amount|floatformat:0 }}</div>
+            </div>
+            <div>
+                <div style="font-size:.75rem;color:var(--gray-500);text-transform:uppercase;font-weight:600">Paid</div>
+                <div style="font-size:1.5rem;font-weight:700;color:var(--success)">₹{{ fee.paid_amount|floatformat:0 }}
+                </div>
+            </div>
+            <div>
+                <div style="font-size:.75rem;color:var(--gray-500);text-transform:uppercase;font-weight:600">Balance
+                </div>
+                <div
+                    style="font-size:1.5rem;font-weight:700;color:{% if fee.balance > 0 %}var(--danger){% else %}var(--success){% endif %}">
+                    ₹{{ fee.balance|floatformat:0 }}</div>
+            </div>
+        </div>
+        <div class="progress-bar-track">
+            <div class="progress-bar-fill {% if fee.is_paid %}good{% elif fee.paid_amount > 0 %}warning{% else %}low{% endif %}"
+                style="width:{% widthratio fee.paid_amount fee.total_amount 100 %}%"></div>
+        </div>
+
+        {% if fee.payments.all %}
+        <div style="margin-top:1rem">
+            <div style="font-size:.82rem;font-weight:600;color:var(--gray-600);margin-bottom:.5rem">Payment History
+            </div>
+            {% for p in fee.payments.all %}
+            <div
+                style="display:flex;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid var(--gray-100);font-size:.85rem">
+                <span>{{ p.receipt_number }}</span>
+                <span class="text-muted">{{ p.get_method_display }} · {{ p.payment_date|date:"d M Y" }}</span>
+                <span style="font-weight:600;color:var(--success)">₹{{ p.amount|floatformat:0 }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% empty %}
+<div class="alert alert-info fade-in-up">💰 No fee records found.</div>
+{% endfor %}
+{% endblock %}

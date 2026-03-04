@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}My Profile{% endblock %}
+{% block topbar_title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in-up">
+    <div>
+        <div class="page-header-title">{{ request.user.full_name }}</div>
+        <div class="page-header-subtitle">Teacher Profile</div>
+    </div>
+</div>
+
+<!-- Profile Card -->
+<div class="card fade-in-up" style="margin-bottom:1.5rem">
+    <div class="card-body">
+        <div style="display:flex;align-items:center;gap:1.5rem">
+            <div
+                style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--brand-500),var(--brand-700));display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.5rem;font-weight:700;flex-shrink:0">
+                {{ request.user.first_name|first|upper }}{{ request.user.last_name|first|upper }}
+            </div>
+            <div>
+                <h2 style="font-size:1.3rem;font-weight:700;margin-bottom:.25rem;color:var(--gray-900)">{{
+                    request.user.full_name }}</h2>
+                <div style="display:flex;flex-wrap:wrap;gap:1rem;font-size:.85rem;color:var(--gray-500)">
+                    <span>📧 {{ request.user.email }}</span>
+                    <span>🆔 {{ request.user.username }}</span>
+                    <span>🎓 Teacher</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="stats-grid fade-in-up" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr))">
+    <div class="stat-card">
+        <div class="stat-card-icon indigo">📅</div>
+        <div class="stat-card-value">{{ sessions_count }}</div>
+        <div class="stat-card-label">Sessions Taken</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-icon green">📚</div>
+        <div class="stat-card-value">{{ assignments.count }}</div>
+        <div class="stat-card-label">Assignments</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-icon amber">🏖</div>
+        <div class="stat-card-value">{{ leaves_taken }}</div>
+        <div class="stat-card-label">Leaves Taken</div>
+    </div>
+</div>
+
+<!-- Teaching Assignments -->
+{% if assignments %}
+<div class="card fade-in-up" style="margin-top:1.5rem">
+    <div class="card-header">
+        <div class="card-title">Teaching Assignments</div>
+    </div>
+    <div class="table-wrapper" style="border:none;border-radius:0">
+        <table class="erp-table">
+            <thead>
+                <tr>
+                    <th>Subject</th>
+                    <th>Section</th>
+                    <th>Course</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in assignments %}
+                <tr>
+                    <td class="fw-semibold">{{ a.subject.name }}</td>
+                    <td>{{ a.section.name }}</td>
+                    <td class="text-muted text-sm">{{ a.section.class_obj.course.name }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
