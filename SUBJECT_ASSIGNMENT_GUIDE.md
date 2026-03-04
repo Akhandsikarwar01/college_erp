@@ -306,3 +306,5 @@ EOF
 Version: 1.0
 Last Updated: 4 March 2026
 Commit: c06e4d8
+
+**Related**: See [SUBJECT_CODE_GUIDE.md](SUBJECT_CODE_GUIDE.md) for detailed information about subject codes, code formats, and validation.

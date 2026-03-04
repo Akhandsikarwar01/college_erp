@@ -46,6 +46,45 @@ class SemesterAdmin(admin.ModelAdmin):
 
 @admin.register(Subject)
 class SubjectAdmin(admin.ModelAdmin):
-    list_display  = ("name", "code", "semester")
-    list_filter   = ("semester__course",)
-    search_fields = ("name", "code")
+    list_display  = ("code", "name", "semester", "course_display", "created_at")
+    list_filter   = ("semester__course", "semester__course__program__department", "created_at")
+    search_fields = ("code", "name", "semester__course__name")
+    ordering      = ("code",)
+    readonly_fields = ("created_at", "updated_at", "course_display", "semester_display")
+    
+    fieldsets = (
+        ("Subject Information", {
+            "fields": ("code", "name", "semester")
+        }),
+        ("Display Information", {
+            "fields": ("semester_display", "course_display"),
+            "classes": ("collapse",)
+        }),
+        ("Metadata", {
+            "fields": ("created_at", "updated_at"),
+            "classes": ("collapse",)
+        }),
+    )
+    
+    def course_display(self, obj):
+        """Show which course this subject belongs to."""
+        if obj.semester:
+            return f"{obj.semester.course.name} (Sem {obj.semester.number})"
+        return "—"
+    course_display.short_description = "Course (Semester)"
+    
+    def semester_display(self, obj):
+        """Show full semester information."""
+        if obj.semester:
+            course = obj.semester.course
+            program = course.program
+            dept = program.department
+            return f"{dept.name} → {program.name} → {course.name} → Semester {obj.semester.number}"
+        return "—"
+    semester_display.short_description = "Full Path"
+    
+    def get_queryset(self, request):
+        """Optimize queries."""
+        return super().get_queryset(request).select_related(
+            'semester__course__program__department'
+        )

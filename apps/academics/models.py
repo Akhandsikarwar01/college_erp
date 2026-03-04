@@ -5,6 +5,7 @@ Academics models: Department → Program → Course → Class → Section
 """
 
 from django.db import models
+from django.core.exceptions import ValidationError
 from apps.core.models import TimeStampedModel
 
 
@@ -95,15 +96,52 @@ class Semester(TimeStampedModel):
 
 
 class Subject(TimeStampedModel):
+    """Subject taught in a specific semester of a course.
+    
+    Each subject:
+    - Belongs to exactly ONE semester (hence ONE course, ONE specific semester number)
+    - Has a globally unique code (e.g., CS101, MATH201)
+    - Can be taught by multiple teachers to different sections
+    - Cannot be duplicated per semester (unique_together on semester + name)
+    """
     semester = models.ForeignKey(
         Semester, on_delete=models.CASCADE, related_name="subjects"
     )
-    name = models.CharField(max_length=100)
-    code = models.CharField(max_length=20, blank=True)
+    name = models.CharField(max_length=100, help_text="Full subject name (e.g., 'Data Structures')")
+    code = models.CharField(
+        max_length=20,
+        unique=True,
+        help_text="Unique subject code (e.g., 'CS301'). Globally unique across all courses."
+    )
 
     class Meta:
-        ordering = ["name"]
-        unique_together = ("semester", "name")
+        ordering = ["code"]
+        unique_together = ("semester", "name")  # Can't repeat same name in same semester
+        verbose_name = "Subject"
+        verbose_name_plural = "Subjects"
+        indexes = [
+            models.Index(fields=["code"]),
+            models.Index(fields=["semester", "name"]),
+        ]
+
+    def clean(self):
+        """Validate subject code format and uniqueness."""
+        if not self.code:
+            raise ValidationError({"code": "Subject code is required."})
+        
+        # Validate code format: alphanumeric, no spaces
+        if not self.code.replace("-", "").replace("_", "").isalnum():
+            raise ValidationError({
+                "code": "Subject code must be alphanumeric (e.g., CS301, MATH-201). Hyphens and underscores allowed."
+            })
+        
+        # Check for existing code (excluding self)
+        if Subject.objects.filter(code=self.code).exclude(pk=self.pk).exists():
+            raise ValidationError({"code": f"Subject code '{self.code}' already exists. Codes must be globally unique."})
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.name} (Sem {self.semester.number})"
+        return f"{self.code} – {self.name} (Sem {self.semester.number})"
