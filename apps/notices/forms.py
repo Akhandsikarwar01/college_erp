@@ -26,7 +26,7 @@ class NoticeForm(forms.ModelForm):
             }),
             'category': forms.Select(attrs={'class': 'form-control'}),
             'target_role': forms.Select(attrs={'class': 'form-control'}),
-            'is_pinned': forms.CheckboxInput(attrs{'class': 'form-check-input'}),
+            'is_pinned': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'attachment': forms.FileInput(attrs={
                 'class': 'form-control',
                 'accept': '.pdf,.doc,.docx'

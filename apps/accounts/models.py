@@ -102,6 +102,13 @@ class TeacherProfile(models.Model):
         CustomUser, on_delete=models.CASCADE, related_name="teacher_profile"
     )
     employee_id = models.CharField(max_length=20)
+    department = models.ForeignKey(
+        "academics.Department",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="teachers",
+    )
 
     def __str__(self):
         return f"{self.user.username} – {self.employee_id}"

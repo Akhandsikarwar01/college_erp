@@ -2,10 +2,15 @@
 DRF Serializers for API endpoints
 """
 from rest_framework import serializers
-from apps.accounts.models import CustomUser, StudentProfile, TeacherProfile
-from apps.academics.models import Section, Department, Program, Course, Class, Subject
+from apps.accounts.models import CustomUser, StudentProfile, TeacherProfile, DeanProfile
+from apps.academics.models import Section, Department, Program, Course, Class, Subject, Semester
 from apps.attendance.models import AttendanceRecord, AttendanceSession
 from apps.leave.models import LeaveApplication
+from apps.fees.models import FeeStructure, FeeType, StudentFee, Payment
+from apps.timetable.models import TimeSlot, TimetableEntry
+from apps.faculty.models import TeacherAssignment
+from apps.examinations.models import Exam, ExamSchedule, StudentResult
+from apps.notices.models import Notice, Event
 
 
 class UserSerializer(serializers.ModelSerializer):
